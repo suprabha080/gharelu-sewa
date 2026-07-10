@@ -69,42 +69,87 @@ export const Header = () => {
             </span>
           </Link>
 
-          {/* Center Navigation */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
-            <Link
-              to="/"
-              className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
-                location.pathname === '/' ? 'text-[#07535f] font-semibold' : ''
-              }`}
-            >
-              <Home className="w-4 h-4" />
-              <span>Home</span>
-            </Link>
-            <Link
-              to="/customer/browse"
-              className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
-                location.pathname === '/customer/browse' ? 'text-[#07535f] font-semibold' : ''
-              }`}
-            >
-              <Search className="w-4 h-4" />
-              <span>Services</span>
-            </Link>
-            <Link
-              to="/book"
-              className="flex items-center gap-1.5 bg-[#07535f] text-white px-4 py-2 rounded-full hover:bg-[#06424b] transition-all font-semibold shadow-sm"
-            >
-              <Calendar className="w-4 h-4" />
-              <span>Book Now</span>
-            </Link>
-            <Link
-              to="/track"
-              className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
-                location.pathname === '/track' ? 'text-[#07535f] font-semibold' : ''
-              }`}
-            >
-              <User className="w-4 h-4" />
-              <span>Track Job</span>
-            </Link>
+          {/* Center Navigation — role-aware */}
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
+            {currentRole === 'provider' ? (
+              /* Provider Nav */
+              <>
+                <Link
+                  to="/provider"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/provider' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <Home className="w-4 h-4" />
+                  <span>Dashboard</span>
+                </Link>
+                <Link
+                  to="/provider/find-jobs"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/provider/find-jobs' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <Search className="w-4 h-4" />
+                  <span>Find Jobs</span>
+                </Link>
+                <Link
+                  to="/provider/bookings"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/provider/bookings' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span>My Bookings</span>
+                </Link>
+                <Link
+                  to="/provider/earnings"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/provider/earnings' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Earnings</span>
+                </Link>
+              </>
+            ) : (
+              /* Customer / Guest Nav */
+              <>
+                <Link
+                  to="/"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <Home className="w-4 h-4" />
+                  <span>Home</span>
+                </Link>
+                <Link
+                  to="/customer/browse"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/customer/browse' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <Search className="w-4 h-4" />
+                  <span>Services</span>
+                </Link>
+                <Link
+                  to="/book"
+                  className="flex items-center gap-1.5 bg-[#07535f] text-white px-4 py-2 rounded-full hover:bg-[#06424b] transition-all font-semibold shadow-sm"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span>Book Now</span>
+                </Link>
+                <Link
+                  to="/track"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/track' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Track Job</span>
+                </Link>
+              </>
+            )}
           </nav>
 
           {/* Right Section */}

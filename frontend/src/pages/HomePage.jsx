@@ -195,7 +195,7 @@ export default function HomePage() {
           {categories.map(cat => (
             <Link
               key={cat.id}
-              to={isAuthenticated ? `/book?category=${encodeURIComponent(cat.name)}` : `/customer/browse?query=${cat.name}`}
+              to={`/book?category=${encodeURIComponent(cat.name)}`}
               className="border border-gray-100 hover:border-transparent hover:shadow-lg p-6 rounded-2xl transition-all text-center flex flex-col items-center hover:-translate-y-1 group bg-white"
             >
               <span className="text-4xl group-hover:scale-110 transition-transform mb-3 block">{cat.icon}</span>
