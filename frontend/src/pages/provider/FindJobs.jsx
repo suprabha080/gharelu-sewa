@@ -1,262 +1,428 @@
 import React, { useState } from 'react';
-import { Search, MapPin, Clock, Zap, Filter, CheckCircle, DollarSign, Wrench, Sparkles, Wind } from 'lucide-react';
-import Card from '../../components/Card';
+import { Link } from 'react-router-dom';
+import { Search, MapPin, Star, ShieldCheck, Clock, Filter, X } from 'lucide-react';
 
-const openJobs = [
+const providers = [
   {
     id: 1,
-    title: 'Pipe Leak Under Kitchen Sink',
+    name: 'Rajesh Plumbing Works',
     category: 'Plumbing',
-    emoji: '🔧',
-    customerName: 'Sunita Sharma',
-    location: 'Lakeside, Pokhara',
-    postedAgo: '5 min ago',
-    budget: 'Rs. 600 – 900',
-    urgency: 'urgent',
-    description: 'Water is leaking under the kitchen sink, needs urgent repair. Pipe seems cracked.',
-    distance: '1.2 km',
+    rating: 4.9,
+    reviews: 142,
+    price: 'Rs. 500',
+    priceUnit: 'per visit',
+    location: 'Baneshwor',
+    responseTime: '~15 min',
+    image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=220&fit=crop',
+    tags: ['Pipe Leak', 'Installation', 'Drainage'],
+    verified: true,
+    available: true,
   },
   {
     id: 2,
-    title: 'Full Home Deep Clean (3BHK)',
-    category: 'Cleaning',
-    emoji: '🧹',
-    customerName: 'Bikash Karki',
-    location: 'Bagar, Pokhara',
-    postedAgo: '15 min ago',
-    budget: 'Rs. 1,500 – 2,000',
-    urgency: 'normal',
-    description: 'Need thorough deep cleaning of 3 bedroom flat including kitchen and bathrooms.',
-    distance: '2.5 km',
+    name: 'BrightSpark Electricals',
+    category: 'Electrical',
+    rating: 4.7,
+    reviews: 89,
+    price: 'Rs. 700',
+    priceUnit: 'per visit',
+    location: 'Lazimpat',
+    responseTime: '~25 min',
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=220&fit=crop',
+    tags: ['Rewiring', 'Fan Install', 'Short Circuit'],
+    verified: true,
+    available: true,
   },
   {
     id: 3,
-    title: 'AC Gas Refilling',
-    category: 'AC Service',
-    emoji: '❄️',
-    customerName: 'Mira Thapa',
-    location: 'Newroad, Pokhara',
-    postedAgo: '25 min ago',
-    budget: 'Rs. 800 – 1,200',
-    urgency: 'normal',
-    description: 'My 1.5 ton split AC is not cooling. Probably needs gas refilling.',
-    distance: '3.1 km',
+    name: 'CleanNest Home Services',
+    category: 'Cleaning',
+    rating: 4.8,
+    reviews: 215,
+    price: 'Rs. 1,200',
+    priceUnit: 'per session',
+    location: 'Thamel',
+    responseTime: '~1 hr',
+    image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=220&fit=crop',
+    tags: ['Deep Clean', 'Kitchen', 'Bathroom'],
+    verified: true,
+    available: true,
   },
   {
     id: 4,
-    title: 'Switchboard Not Working',
-    category: 'Electrical',
-    emoji: '⚡',
-    customerName: 'Ramesh Poudel',
-    location: 'Chipiyata, Pokhara',
-    postedAgo: '40 min ago',
-    budget: 'Rs. 400 – 700',
-    urgency: 'urgent',
-    description: 'One switchboard in the bedroom has completely stopped working. Sparks visible.',
-    distance: '0.8 km',
+    name: 'ArtWork Painters',
+    category: 'Painting',
+    rating: 4.6,
+    reviews: 58,
+    price: 'Rs. 800',
+    priceUnit: 'per room',
+    location: 'Baluwatar',
+    responseTime: '~2 hrs',
+    image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=400&h=220&fit=crop',
+    tags: ['Interior', 'Exterior', 'Texture'],
+    verified: false,
+    available: true,
   },
   {
     id: 5,
-    title: 'Bathroom Tile Scrubbing',
-    category: 'Cleaning',
-    emoji: '🧹',
-    customerName: 'Priya Adhikari',
-    location: 'Mahendrapul, Pokhara',
-    postedAgo: '1 hr ago',
-    budget: 'Rs. 400 – 600',
-    urgency: 'normal',
-    description: 'Two bathrooms need thorough scrubbing and disinfection.',
-    distance: '4.0 km',
+    name: 'WoodCraft Carpentry',
+    category: 'Carpentry',
+    rating: 4.5,
+    reviews: 73,
+    price: 'Rs. 900',
+    priceUnit: 'per visit',
+    location: 'Patan',
+    responseTime: '~30 min',
+    image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400&h=220&fit=crop',
+    tags: ['Furniture Fix', 'Door Repair', 'Shelving'],
+    verified: true,
+    available: false,
   },
   {
     id: 6,
-    title: 'New Light Fitting in Hall',
-    category: 'Electrical',
-    emoji: '⚡',
-    customerName: 'Gopal Shrestha',
-    location: 'Prithvichowk, Pokhara',
-    postedAgo: '2 hrs ago',
-    budget: 'Rs. 300 – 500',
-    urgency: 'normal',
-    description: 'Need to install 3 new LED panel lights in the living room.',
-    distance: '5.5 km',
+    name: 'CoolAir AC Technicians',
+    category: 'AC Repair',
+    rating: 4.9,
+    reviews: 102,
+    price: 'Rs. 600',
+    priceUnit: 'per visit',
+    location: 'Koteshwor',
+    responseTime: '~20 min',
+    image: 'https://images.unsplash.com/photo-1631983564532-ef40dd6e9a5d?w=400&h=220&fit=crop',
+    tags: ['AC Service', 'Gas Refill', 'Installation'],
+    verified: true,
+    available: true,
+  },
+  {
+    id: 7,
+    name: 'StyleStitch Tailoring',
+    category: 'Tailoring',
+    rating: 4.4,
+    reviews: 41,
+    price: 'Rs. 350',
+    priceUnit: 'per piece',
+    location: 'Kalanki',
+    responseTime: '~1 hr',
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=220&fit=crop',
+    tags: ['Stitching', 'Alteration', 'Uniform'],
+    verified: false,
+    available: true,
+  },
+  {
+    id: 8,
+    name: 'GreenShield Pest Control',
+    category: 'Pest Control',
+    rating: 4.7,
+    reviews: 64,
+    price: 'Rs. 1,500',
+    priceUnit: 'per session',
+    location: 'Maharajgunj',
+    responseTime: '~45 min',
+    image: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=400&h=220&fit=crop',
+    tags: ['Cockroach', 'Rodents', 'Bed Bugs'],
+    verified: true,
+    available: false,
+  },
+  {
+    id: 9,
+    name: 'FixAll General Services',
+    category: 'Plumbing',
+    rating: 4.3,
+    reviews: 33,
+    price: 'Rs. 400',
+    priceUnit: 'per visit',
+    location: 'Baneshwor',
+    responseTime: '~35 min',
+    image: 'https://images.unsplash.com/photo-1607400201515-c2c41c07d307?w=400&h=220&fit=crop',
+    tags: ['Tap Repair', 'Tank Fill', 'Drain'],
+    verified: true,
+    available: true,
   },
 ];
 
-const categories = ['All', 'Plumbing', 'Electrical', 'Cleaning', 'AC Service'];
-const urgencyOptions = ['All', 'urgent', 'normal'];
+const categories = ['All', 'Plumbing', 'Electrical', 'Cleaning', 'Painting', 'Carpentry', 'AC Repair', 'Tailoring', 'Pest Control'];
+
+const locationOptions = [
+  { value: '', label: 'All Locations' },
+  { value: 'Baneshwor', label: 'Baneshwor, KTM' },
+  { value: 'Thamel', label: 'Thamel, KTM' },
+  { value: 'Lazimpat', label: 'Lazimpat, KTM' },
+  { value: 'Patan', label: 'Patan, Lalitpur' },
+  { value: 'Koteshwor', label: 'Koteshwor, KTM' },
+  { value: 'Lakeside', label: 'Lakeside, Pokhara' },
+  { value: 'Newroad', label: 'Newroad, Pokhara' },
+];
 
 export default function FindJobs() {
   const [search, setSearch] = useState('');
+  const [location, setLocation] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
-  const [urgencyFilter, setUrgencyFilter] = useState('All');
-  const [acceptedJobs, setAcceptedJobs] = useState([]);
+  const [availableOnly, setAvailableOnly] = useState(false);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [maxPrice, setMaxPrice] = useState(2000);
 
-  const filtered = openJobs.filter((job) => {
-    const matchCat = activeCategory === 'All' || job.category === activeCategory;
-    const matchUrgency = urgencyFilter === 'All' || job.urgency === urgencyFilter;
+  const filtered = providers.filter((p) => {
+    const matchCat = activeCategory === 'All' || p.category === activeCategory;
+    const matchLoc = location === '' || p.location.toLowerCase().includes(location.toLowerCase());
     const matchSearch =
       search === '' ||
-      `${job.title} ${job.location} ${job.description}`.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchUrgency && matchSearch;
+      `${p.name} ${p.category} ${p.tags.join(' ')}`.toLowerCase().includes(search.toLowerCase());
+    const matchAvail = !availableOnly || p.available;
+    const matchVerified = !verifiedOnly || p.verified;
+    const priceNum = parseInt(p.price.replace(/[^0-9]/g, ''));
+    const matchPrice = priceNum <= maxPrice;
+    return matchCat && matchLoc && matchSearch && matchAvail && matchVerified && matchPrice;
   });
 
-  const handleAccept = (jobId) => {
-    setAcceptedJobs((prev) => [...prev, jobId]);
+  const clearFilters = () => {
+    setAvailableOnly(false);
+    setVerifiedOnly(false);
+    setMaxPrice(2000);
+    setSearch('');
+    setLocation('');
+    setActiveCategory('All');
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50">
 
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800 font-serif">Find Jobs Near You</h1>
-          <p className="text-sm text-gray-500 mt-1">Browse open service requests from customers in your area</p>
-        </div>
+      {/* Teal Hero Search Header */}
+      <div className="bg-[#07535f] px-4 sm:px-8 py-8">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-2xl font-bold text-white mb-5">Find Services Near You</h1>
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search Input */}
+            <div className="flex-1 flex items-center gap-2 bg-white rounded-xl px-4 py-3 shadow-sm">
+              <Search className="w-5 h-5 text-gray-400 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search plumber, electrician..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-transparent border-none focus:outline-none text-sm text-gray-800 placeholder-gray-400"
+              />
+            </div>
 
-        {/* Search & Filters */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col md:flex-row gap-3 items-center">
-          <div className="flex-1 w-full flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-2.5 border border-gray-200 focus-within:border-[#07535f] focus-within:ring-1 focus-within:ring-[#07535f]">
-            <Search className="w-4 h-4 text-gray-400 shrink-0" />
-            <input
-              type="text"
-              placeholder="Search by job title, location, or description..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent border-none focus:outline-none w-full text-sm text-gray-700"
-            />
+            {/* Location Selector */}
+            <div className="flex items-center gap-2 bg-white rounded-xl px-4 py-3 shadow-sm min-w-[200px]">
+              <MapPin className="w-5 h-5 text-[#07535f] shrink-0" />
+              <select
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="w-full bg-transparent border-none focus:outline-none text-sm text-gray-700 cursor-pointer appearance-none"
+              >
+                {locationOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-400 shrink-0" />
-            <select
-              value={urgencyFilter}
-              onChange={(e) => setUrgencyFilter(e.target.value)}
-              className="bg-gray-50 border border-gray-200 text-sm text-gray-700 rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#07535f] cursor-pointer"
-            >
-              <option value="All">All Urgency</option>
-              <option value="urgent">🔴 Urgent</option>
-              <option value="normal">🟢 Normal</option>
-            </select>
-          </div>
         </div>
+      </div>
 
-        {/* Category Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-1">
+      {/* Category Tabs */}
+      <div className="bg-white border-b border-gray-100 px-4 sm:px-8 py-3 sticky top-16 z-30 shadow-sm">
+        <div className="max-w-5xl mx-auto flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
                 activeCategory === cat
-                  ? 'bg-[#07535f] text-white shadow-sm'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  ? 'bg-[#07535f] text-white border-[#07535f] shadow-sm'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-[#07535f] hover:text-[#07535f]'
               }`}
             >
+              {cat === 'Plumbing' && '🔧'}
+              {cat === 'Electrical' && '⚡'}
+              {cat === 'Cleaning' && '🧹'}
+              {cat === 'Painting' && '🎨'}
+              {cat === 'Carpentry' && '🪚'}
+              {cat === 'AC Repair' && '❄️'}
+              {cat === 'Tailoring' && '🧵'}
+              {cat === 'Pest Control' && '🪲'}
+              {cat === 'All' && '✨'}
               {cat}
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
-            <p className="text-2xl font-black text-[#07535f]">{openJobs.length}</p>
-            <p className="text-xs text-gray-400 font-semibold mt-1">Open Jobs</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
-            <p className="text-2xl font-black text-red-500">{openJobs.filter(j => j.urgency === 'urgent').length}</p>
-            <p className="text-xs text-gray-400 font-semibold mt-1">Urgent</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm">
-            <p className="text-2xl font-black text-green-600">{acceptedJobs.length}</p>
-            <p className="text-xs text-gray-400 font-semibold mt-1">Accepted by You</p>
-          </div>
-        </div>
+      {/* Main Content */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 flex gap-6">
 
-        {/* Job Listings */}
-        {filtered.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
-            <p className="text-4xl mb-3">🔍</p>
-            <h3 className="text-lg font-bold text-gray-700">No jobs found</h3>
-            <p className="text-sm text-gray-400 mt-1">Try adjusting your filters or search terms.</p>
+        {/* Left Filter Sidebar */}
+        <aside className="hidden lg:block w-52 shrink-0">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sticky top-36">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
+                <Filter className="w-4 h-4" /> Filters
+              </h3>
+              <button onClick={clearFilters} className="text-[10px] text-[#07535f] font-bold hover:underline">
+                Clear
+              </button>
+            </div>
+
+            {/* Availability */}
+            <div className="mb-5">
+              <p className="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Availability</p>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={availableOnly}
+                  onChange={(e) => setAvailableOnly(e.target.checked)}
+                  className="w-4 h-4 text-[#07535f] rounded focus:ring-[#07535f] border-gray-300"
+                />
+                Available Now Only
+              </label>
+            </div>
+
+            {/* Verification */}
+            <div className="mb-5">
+              <p className="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Verification</p>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={verifiedOnly}
+                  onChange={(e) => setVerifiedOnly(e.target.checked)}
+                  className="w-4 h-4 text-[#07535f] rounded focus:ring-[#07535f] border-gray-300"
+                />
+                Verified Only
+              </label>
+            </div>
+
+            {/* Price Range */}
+            <div>
+              <p className="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Price Range</p>
+              <p className="text-xs text-gray-500 mb-2">Rs. 0 – Rs. {maxPrice.toLocaleString()}</p>
+              <input
+                type="range"
+                min={200}
+                max={2000}
+                step={100}
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(Number(e.target.value))}
+                className="w-full accent-[#07535f]"
+              />
+              <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                <span>Rs. 200</span>
+                <span>Rs. 2,000</span>
+              </div>
+            </div>
+
             <button
-              onClick={() => { setSearch(''); setActiveCategory('All'); setUrgencyFilter('All'); }}
-              className="mt-4 px-4 py-2 text-sm font-bold text-[#07535f] border border-[#07535f] rounded-xl hover:bg-[#07535f]/5 transition-all"
+              onClick={clearFilters}
+              className="mt-5 w-full text-xs font-bold text-gray-500 border border-gray-200 rounded-xl py-2 hover:bg-gray-50 transition-all"
             >
               Clear Filters
             </button>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {filtered.map((job) => {
-              const isAccepted = acceptedJobs.includes(job.id);
-              return (
-                <Card key={job.id} className="p-5 border-gray-100 hover:shadow-md transition-shadow">
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                    {/* Icon */}
-                    <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-3xl flex-shrink-0">
-                      {job.emoji}
-                    </div>
+        </aside>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <h3 className="font-bold text-gray-900 text-base">{job.title}</h3>
-                        {job.urgency === 'urgent' && (
-                          <span className="bg-red-50 text-red-600 border border-red-100 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 uppercase tracking-wide">
-                            <Zap className="w-3 h-3" /> Urgent
-                          </span>
-                        )}
-                      </div>
+        {/* Provider Grid */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-gray-500 font-semibold mb-4">
+            <span className="text-gray-800 font-bold">{filtered.length} providers</span> available
+          </p>
 
-                      <p className="text-xs text-gray-400 mb-2 font-medium">{job.category} • Posted {job.postedAgo}</p>
-
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{job.description}</p>
-
-                      <div className="flex flex-wrap gap-3 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-[#07535f]" />
-                          {job.location}
+          {filtered.length === 0 ? (
+            <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
+              <p className="text-4xl mb-3">🔍</p>
+              <h3 className="text-lg font-bold text-gray-700">No providers found</h3>
+              <p className="text-sm text-gray-400 mt-1">Try adjusting your filters or search terms.</p>
+              <button
+                onClick={clearFilters}
+                className="mt-4 px-4 py-2 text-sm font-bold text-[#07535f] border border-[#07535f] rounded-xl hover:bg-[#07535f]/5 transition-all"
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              {filtered.map((p) => (
+                <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                  {/* Cover Image */}
+                  <div className="relative h-36 bg-gray-100">
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                    {/* Badges */}
+                    <div className="absolute top-2 left-2 flex gap-1.5">
+                      {p.verified && (
+                        <span className="flex items-center gap-1 bg-white/90 backdrop-blur-sm text-[#07535f] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#07535f]/20">
+                          <ShieldCheck className="w-3 h-3" /> Verified
                         </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-blue-500" />
-                          {job.distance} away
-                        </span>
-                        <span className="flex items-center gap-1 font-bold text-[#07535f]">
-                          <DollarSign className="w-3.5 h-3.5" />
-                          {job.budget}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Action */}
-                    <div className="flex sm:flex-col gap-2 sm:items-end sm:justify-between sm:min-w-[130px]">
-                      <p className="text-[10px] text-gray-400 font-semibold hidden sm:block">Customer</p>
-                      <p className="text-sm font-bold text-gray-800 hidden sm:block">{job.customerName}</p>
-
-                      {isAccepted ? (
-                        <div className="flex items-center gap-1.5 px-4 py-2 bg-green-50 border border-green-200 rounded-xl text-green-700 font-bold text-xs">
-                          <CheckCircle className="w-4 h-4" />
-                          Accepted
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleAccept(job.id)}
-                          className="px-5 py-2.5 bg-[#07535f] hover:bg-[#06424b] text-white rounded-xl font-bold text-sm transition-all shadow-sm whitespace-nowrap"
-                        >
-                          Accept Job
-                        </button>
                       )}
                     </div>
+                    <div className="absolute top-2 right-2">
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                        p.available
+                          ? 'bg-[#10b981] text-white'
+                          : 'bg-gray-400 text-white'
+                      }`}>
+                        {p.available ? 'Available' : 'Busy'}
+                      </span>
+                    </div>
                   </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
 
+                  {/* Card Body */}
+                  <div className="p-4">
+                    {/* Name + Price */}
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-sm leading-tight">{p.name}</h3>
+                        <p className="text-xs text-gray-400 font-medium mt-0.5">{p.category}</p>
+                      </div>
+                      <div className="text-right shrink-0 ml-2">
+                        <p className="text-sm font-black text-[#07535f]">{p.price}</p>
+                        <p className="text-[10px] text-gray-400">{p.priceUnit}</p>
+                      </div>
+                    </div>
+
+                    {/* Stats Row */}
+                    <div className="flex items-center gap-3 text-xs text-gray-500 my-2">
+                      <span className="flex items-center gap-1 font-semibold">
+                        <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                        <span className="text-gray-700 font-bold">{p.rating}</span>
+                        <span className="text-gray-400">({p.reviews})</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-gray-400" />
+                        {p.location}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-gray-400" />
+                        {p.responseTime}
+                      </span>
+                    </div>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {p.tags.map(tag => (
+                        <span key={tag} className="bg-gray-50 border border-gray-100 text-gray-500 text-[10px] px-2 py-0.5 rounded-full font-medium">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Book Now Button */}
+                    <Link
+                      to={`/book?category=${encodeURIComponent(p.category)}`}
+                      className="block w-full bg-[#07535f] hover:bg-[#06424b] text-white font-bold text-sm py-2.5 rounded-xl text-center transition-all shadow-sm"
+                    >
+                      Book Now
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
     </div>
   );
 }
