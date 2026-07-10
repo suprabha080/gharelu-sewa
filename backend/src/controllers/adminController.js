@@ -96,7 +96,7 @@ export const getPendingProviders = async (req, res) => {
 
     const result = await query(
       `SELECT u.id, u.name, u.email, u.phone, u.ward, u.avatar_url, u.bio, u.created_at,
-              pp.hourly_rate, sc.name as service_category
+              pp.hourly_rate, pp.citizenship_no, sc.name as service_category
        FROM users u
        LEFT JOIN provider_profiles pp ON u.id = pp.user_id
        LEFT JOIN service_categories sc ON pp.category_id = sc.id

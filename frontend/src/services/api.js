@@ -106,4 +106,12 @@ export const adminAPI = {
   deactivateUser: (userId, data) => api.patch(`/admin/users/${userId}/deactivate`, data),
 };
 
+// Payment endpoints (eSewa)
+export const paymentAPI = {
+  initiatePayment: (bookingId) => api.post(`/payments/initiate/${bookingId}`),
+  verifyPayment: (params) => api.get('/payments/verify', { params }),
+  getPaymentByBooking: (bookingId) => api.get(`/payments/booking/${bookingId}`),
+  getAllPayments: (params) => api.get('/payments/all', { params }),
+};
+
 export default api;

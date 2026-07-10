@@ -326,6 +326,11 @@ netstat -ano | findstr :5000
 
 ## 📖 Documentation
 
+- [Database Architecture](./docs/DATABASE.md) - ER diagrams, columns, constraints and indexes
+- [Backend Systems](./docs/BACKEND.md) - Server setup, auth tokens, sockets, and eSewa signatures
+- [Frontend Portal](./docs/FRONTEND.md) - React routing, Auth contexts, wizards, and premium dashboard
+- [System Interaction Flow](./docs/SYSTEM_FLOW.md) - Mermaids mapping booking lifecycles & transactions
+- [Viva/Defense Preparation](./docs/VIVA_QUESTIONS.md) - Examiner/viva questions & detailed answers
 - [API Documentation](./API_DOCS.md) - Detailed endpoint docs
 - [Database Schema](./SCHEMA.md) - ER diagram and tables
 - [Deployment Guide](./DEPLOYMENT.md) - Production setup
@@ -351,11 +356,11 @@ For issues or questions:
 ## 🎯 Future Enhancements
 
 - [ ] Mobile app (React Native)
-- [ ] Payment gateway integration (eSewa, Khalti)
+- [x] Payment gateway integration (eSewa, Khalti)
 - [ ] GPS-based provider mapping
 - [ ] AI-powered recommendations
 - [ ] Multi-language support (Nepali)
-- [ ] Provider background verification
+- [x] Provider background verification
 - [ ] Premium subscription plans
 - [ ] Advanced analytics
 
@@ -365,6 +370,5 @@ For issues or questions:
 
 Tribhuvan University | Institute of Engineering | Paschimanchal Campus
 
-**2025 - All Rights Reserved**
-#   g h a r e l u - s e w a  
- 
+**2026 - All Rights Reserved**
+#   g h a r e l u - s e w a

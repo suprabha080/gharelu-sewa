@@ -9,6 +9,13 @@ node_modules/
 # Production
 /dist
 /build
+frontend/dist/
+frontend/build/
+
+# Temp / test scripts
+backend/test.js
+backend/test2.js
+backend/fixPg.js
 *.jar
 *.egg-info
 

@@ -34,6 +34,28 @@ export const register = async (req, res) => {
     );
 
     const user = result.rows[0];
+
+    // If role is provider, create a provider profile entry
+    if (role === 'provider') {
+      const categoryId = req.body.categoryId || 1;
+      const hourlyRate = req.body.hourlyRate || 500;
+      const bio = req.body.bio || '';
+      const citizenshipNo = req.body.citizenshipNo || null;
+
+      await query(
+        `INSERT INTO provider_profiles (user_id, category_id, hourly_rate, availability, citizenship_no)
+         VALUES ($1, $2, $3, true, $4)`,
+        [user.id, categoryId, hourlyRate, citizenshipNo]
+      );
+
+      if (bio) {
+        await query(
+          `UPDATE users SET bio = $1, is_verified = false WHERE id = $2`,
+          [bio, user.id]
+        );
+      }
+    }
+
     const token = generateToken(user.id, role);
 
     res.status(201).json({

@@ -91,9 +91,9 @@ export default function LoginPage() {
         {/* Demo credentials hint */}
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
           <p className="font-medium mb-1">Demo Credentials:</p>
-          <p>Customer: customer@test.com / password123</p>
-          <p>Provider: provider@test.com / password123</p>
-          <p>Admin: admin@test.com / password123</p>
+          <p>Customer: priya@gmail.com / password</p>
+          <p>Provider: rajesh@gmail.com / password</p>
+          <p>Admin: admin@gharelusewa.com / password</p>
         </div>
       </Card>
     </div>

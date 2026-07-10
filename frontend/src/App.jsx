@@ -13,6 +13,10 @@ import CustomerDashboard from './pages/customer/Dashboard';
 import BrowseServices from './pages/customer/BrowseServices';
 import BookingDetails from './pages/customer/BookingDetails';
 import BookingHistory from './pages/customer/BookingHistory';
+import BookingWizard from './pages/customer/BookingWizard';
+import LiveTracking from './pages/customer/LiveTracking';
+import InvoicePage from './pages/customer/InvoicePage';
+import PaymentSuccess from './pages/customer/PaymentSuccess';
 
 // Provider Pages
 import ProviderDashboard from './pages/provider/Dashboard';
@@ -49,6 +53,10 @@ const AppRoutes = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <LoginPage />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <RegisterPage />} />
+      <Route path="/book" element={<BookingWizard />} />
+      <Route path="/track" element={<LiveTracking />} />
+      <Route path="/payment/success" element={<PaymentSuccess />} />
+      <Route path="/payment/failed" element={<PaymentSuccess />} />
 
       {/* Customer Routes */}
       <Route
@@ -59,6 +67,7 @@ const AppRoutes = () => {
               <Route path="/" element={<CustomerDashboard />} />
               <Route path="/browse" element={<BrowseServices />} />
               <Route path="/bookings/:bookingId" element={<BookingDetails />} />
+              <Route path="/invoice/:bookingId" element={<InvoicePage />} />
               <Route path="/history" element={<BookingHistory />} />
             </Routes>
           </ProtectedRoute>
@@ -74,6 +83,7 @@ const AppRoutes = () => {
               <Route path="/" element={<ProviderDashboard />} />
               <Route path="/profile" element={<ProviderProfile />} />
               <Route path="/bookings" element={<MyBookings />} />
+              <Route path="/bookings/:bookingId" element={<BookingDetails />} />
               <Route path="/earnings" element={<MyEarnings />} />
             </Routes>
           </ProtectedRoute>
@@ -111,7 +121,7 @@ function App() {
           </main>
           <footer className="bg-gray-900 text-gray-300 py-8 mt-16">
             <div className="max-w-7xl mx-auto px-4 text-center">
-              <p>&copy; 2025 Gharelu Sewa. All rights reserved.</p>
+              <p>&copy; 2026 Gharelu Sewa. All rights reserved.</p>
               <p className="text-sm text-gray-500 mt-2">Connecting you with trusted local service providers</p>
             </div>
           </footer>

@@ -148,6 +148,65 @@ export default function RegisterPage() {
             required
           />
 
+          {formData.role === 'provider' && (
+            <div className="space-y-4 pt-4 border-t border-gray-200 mt-4">
+              <h3 className="text-sm font-bold text-gray-800">Provider Details</h3>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Primary Service Category
+                </label>
+                <select
+                  name="categoryId"
+                  value={formData.categoryId || '1'}
+                  onChange={handleChange}
+                  className="input-field"
+                  required={formData.role === 'provider'}
+                >
+                  <option value="1">Plumbing</option>
+                  <option value="2">Electrical</option>
+                  <option value="3">Cleaning</option>
+                  <option value="4">AC Service</option>
+                </select>
+              </div>
+
+              <Input
+                label="Years of Experience"
+                type="number"
+                name="experience"
+                value={formData.experience || ''}
+                onChange={handleChange}
+                placeholder="e.g. 5"
+                min="0"
+                required={formData.role === 'provider'}
+              />
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Bio / Qualifications
+                </label>
+                <textarea
+                  name="bio"
+                  value={formData.bio || ''}
+                  onChange={handleChange}
+                  placeholder="Describe your qualifications, certifications, and experience..."
+                  className="input-field resize-none h-24"
+                  required={formData.role === 'provider'}
+                />
+              </div>
+
+              <Input
+                label="Citizenship / License Number"
+                type="text"
+                name="citizenshipNo"
+                value={formData.citizenshipNo || ''}
+                onChange={handleChange}
+                placeholder="Required for KYC verification"
+                required={formData.role === 'provider'}
+              />
+            </div>
+          )}
+
           <Button
             type="submit"
             variant="primary"
