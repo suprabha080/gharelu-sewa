@@ -449,8 +449,3 @@ export default function BookingWizard() {
   );
 }
 
-
-      </div>
-    </div>
-  );
-}
