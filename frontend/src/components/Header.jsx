@@ -90,7 +90,7 @@ export const Header = () => {
                   }`}
                 >
                   <Search className="w-4 h-4" />
-                  <span>Find Jobs</span>
+                  <span>Browse</span>
                 </Link>
                 <Link
                   to="/provider/bookings"
