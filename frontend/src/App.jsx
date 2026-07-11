@@ -45,6 +45,8 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   return children;
 };
 
+import AdminLayout from './components/AdminLayout';
+
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
 
@@ -97,11 +99,13 @@ const AppRoutes = () => {
         path="/admin/*"
         element={
           <ProtectedRoute requiredRole="admin">
-            <Routes>
-              <Route path="/" element={<AdminDashboard />} />
-              <Route path="/providers" element={<ManageProviders />} />
-              <Route path="/analytics" element={<Analytics />} />
-            </Routes>
+            <AdminLayout>
+              <Routes>
+                <Route path="/" element={<AdminDashboard />} />
+                <Route path="/providers" element={<ManageProviders />} />
+                <Route path="/analytics" element={<Analytics />} />
+              </Routes>
+            </AdminLayout>
           </ProtectedRoute>
         }
       />

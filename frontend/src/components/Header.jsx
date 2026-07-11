@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, Bell, LogOut, Home, Search, Calendar, User, ChevronDown } from 'lucide-react';
+import { Menu, X, Bell, LogOut, Home, Search, Calendar, User, ChevronDown, Shield, BarChart2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Header = () => {
@@ -109,6 +109,37 @@ export const Header = () => {
                 >
                   <User className="w-4 h-4" />
                   <span>Earnings</span>
+                </Link>
+              </>
+            ) : currentRole === 'admin' ? (
+              /* Admin Nav */
+              <>
+                <Link
+                  to="/admin"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/admin' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <Home className="w-4 h-4" />
+                  <span>Admin Dashboard</span>
+                </Link>
+                <Link
+                  to="/admin/providers"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/admin/providers' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <Shield className="w-4 h-4" />
+                  <span>KYC Verifications</span>
+                </Link>
+                <Link
+                  to="/admin/analytics"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/admin/analytics' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <BarChart2 className="w-4 h-4" />
+                  <span>Analytics</span>
                 </Link>
               </>
             ) : (
