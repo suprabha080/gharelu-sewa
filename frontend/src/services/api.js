@@ -99,11 +99,14 @@ export const providerAPI = {
 export const adminAPI = {
   getPlatformStats: () => api.get('/admin/stats'),
   getPendingProviders: (params) => api.get('/admin/providers/pending', { params }),
+  getAllProviders: (params) => api.get('/admin/providers/all', { params }),
   verifyProvider: (userId) => api.patch(`/admin/providers/${userId}/verify`),
   rejectProvider: (userId, data) => api.patch(`/admin/providers/${userId}/reject`, data),
   getAllBookings: (params) => api.get('/admin/bookings', { params }),
   getAnalytics: (params) => api.get('/admin/analytics', { params }),
+  getAllUsers: (params) => api.get('/admin/users', { params }),
   deactivateUser: (userId, data) => api.patch(`/admin/users/${userId}/deactivate`, data),
+  activateUser: (userId) => api.patch(`/admin/users/${userId}/activate`),
 };
 
 // Payment endpoints (eSewa)

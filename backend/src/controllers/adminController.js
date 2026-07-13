@@ -221,3 +221,79 @@ export const deactivateUser = async (req, res) => {
     res.status(500).json({ error: 'Failed to deactivate user' });
   }
 };
+
+// Activate user (admin)
+export const activateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const result = await query(
+      `UPDATE users SET is_active = TRUE WHERE id = $1 RETURNING id, name, email`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      message: 'User activated',
+      user: result.rows[0],
+    });
+  } catch (error) {
+    console.error('Activate user error:', error);
+    res.status(500).json({ error: 'Failed to activate user' });
+  }
+};
+
+// Get ALL users (admin)
+export const getAllUsers = async (req, res) => {
+  try {
+    const { role, limit = 50, offset = 0 } = req.query;
+
+    let sql = `
+      SELECT id, name, email, phone, role, ward, is_active, is_verified, created_at, avatar_url
+      FROM users
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (role) {
+      sql += ` AND role = $${params.length + 1}`;
+      params.push(role);
+    }
+
+    sql += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limit, offset);
+
+    const result = await query(sql, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get all users error:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+};
+
+// Get ALL providers (admin) — includes verified + unverified
+export const getAllProviders = async (req, res) => {
+  try {
+    const { limit = 50, offset = 0 } = req.query;
+
+    const result = await query(
+      `SELECT u.id, u.name, u.email, u.phone, u.ward, u.avatar_url, u.is_verified, u.is_active, u.created_at,
+              pp.hourly_rate, pp.citizenship_no, pp.rating_avg, pp.total_reviews, sc.name as service_category
+       FROM users u
+       LEFT JOIN provider_profiles pp ON u.id = pp.user_id
+       LEFT JOIN service_categories sc ON pp.category_id = sc.id
+       WHERE u.role = 'provider'
+       ORDER BY u.created_at DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get all providers error:', error);
+    res.status(500).json({ error: 'Failed to fetch providers' });
+  }
+};

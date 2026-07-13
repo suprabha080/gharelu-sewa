@@ -13,6 +13,8 @@ export default function AdminLayout({ children }) {
   const menuItems = [
     { label: 'Overview Dashboard', path: '/admin', icon: LayoutDashboard },
     { label: 'KYC & Providers', path: '/admin/providers', icon: ShieldCheck },
+    { label: 'User Database', path: '/admin/users', icon: Users },
+    { label: 'Platform Bookings', path: '/admin/bookings', icon: Calendar },
     { label: 'Platform Analytics', path: '/admin/analytics', icon: BarChart2 },
   ];
 

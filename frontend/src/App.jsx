@@ -29,6 +29,8 @@ import FindJobs from './pages/provider/FindJobs';
 import AdminDashboard from './pages/admin/Dashboard';
 import ManageProviders from './pages/admin/ManageProviders';
 import Analytics from './pages/admin/Analytics';
+import ManageUsers from './pages/admin/ManageUsers';
+import ManageBookings from './pages/admin/ManageBookings';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -104,6 +106,8 @@ const AppRoutes = () => {
                 <Route path="/" element={<AdminDashboard />} />
                 <Route path="/providers" element={<ManageProviders />} />
                 <Route path="/analytics" element={<Analytics />} />
+                <Route path="/users" element={<ManageUsers />} />
+                <Route path="/bookings" element={<ManageBookings />} />
               </Routes>
             </AdminLayout>
           </ProtectedRoute>

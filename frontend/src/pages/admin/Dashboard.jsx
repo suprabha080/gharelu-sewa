@@ -2,105 +2,232 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
 import {
-  Users, Calendar, Shield, Star, ArrowRight,
-  Loader, TrendingUp, CheckCircle, Clock, BarChart2
+  Users, Calendar, Shield, Star, ArrowRight, TrendingUp,
+  CheckCircle, Clock, BarChart2, AlertTriangle, DollarSign,
+  Activity, Zap
 } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
+  const [recentBookings, setRecentBookings] = useState([]);
+  const [pendingProviders, setPendingProviders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminAPI.getPlatformStats()
-      .then(res => setStats(res.data || {}))
-      .catch(() => setStats({}))
-      .finally(() => setLoading(false));
+    Promise.allSettled([
+      adminAPI.getPlatformStats(),
+      adminAPI.getAllBookings({ limit: 5 }),
+      adminAPI.getPendingProviders({ limit: 5 }),
+    ]).then(([statsRes, bookingsRes, providersRes]) => {
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data || {});
+      if (bookingsRes.status === 'fulfilled') {
+        const d = bookingsRes.value.data;
+        setRecentBookings(Array.isArray(d) ? d.slice(0, 5) : []);
+      }
+      if (providersRes.status === 'fulfilled') {
+        const d = providersRes.value.data;
+        setPendingProviders(Array.isArray(d) ? d.slice(0, 4) : []);
+      }
+      setLoading(false);
+    });
   }, []);
 
   const kpis = [
-    { label: 'Total Users',        value: stats?.total_users || stats?.users || 0,                     icon: Users,         color: '#6366f1', bg: '#eef2ff' },
-    { label: 'Total Bookings',     value: stats?.total_bookings || stats?.bookings || 0,               icon: Calendar,      color: '#0ea5e9', bg: '#f0f9ff' },
-    { label: 'Pending KYC',        value: stats?.pending_providers || stats?.pending_verifications || 0, icon: Shield,      color: '#ca8a04', bg: '#fefce8' },
-    { label: 'Avg Rating',         value: stats?.avg_rating ? Number(stats.avg_rating).toFixed(1) : '—', icon: Star,        color: '#f59e0b', bg: '#fffbeb' },
-    { label: 'Completed Jobs',     value: stats?.completed_bookings || stats?.completed || 0,          icon: CheckCircle,   color: '#16a34a', bg: '#f0fdf4' },
-    { label: 'Active Providers',   value: stats?.active_providers || stats?.total_providers || 0,      icon: TrendingUp,    color: '#db2777', bg: '#fdf2f8' },
+    {
+      label: 'Total Customers',
+      value: stats?.total_customers || 0,
+      icon: Users,
+      color: '#6366f1',
+      bg: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
+      sub: 'Registered users',
+    },
+    {
+      label: 'Verified Providers',
+      value: stats?.verified_providers || 0,
+      icon: CheckCircle,
+      color: '#10b981',
+      bg: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+      sub: 'Active & verified',
+    },
+    {
+      label: 'Pending KYC',
+      value: stats?.pending_providers || 0,
+      icon: AlertTriangle,
+      color: '#f59e0b',
+      bg: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+      sub: 'Awaiting review',
+    },
+    {
+      label: 'Total Bookings',
+      value: stats?.total_bookings || 0,
+      icon: Calendar,
+      color: '#0ea5e9',
+      bg: 'linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)',
+      sub: `${stats?.completed_bookings || 0} completed`,
+    },
+    {
+      label: 'Active Jobs',
+      value: stats?.active_bookings || 0,
+      icon: Activity,
+      color: '#ec4899',
+      bg: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)',
+      sub: 'Currently in progress',
+    },
+    {
+      label: 'Avg Rating',
+      value: stats?.avg_platform_rating ? Number(stats.avg_platform_rating).toFixed(1) : '—',
+      icon: Star,
+      color: '#f59e0b',
+      bg: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+      sub: 'Platform-wide',
+    },
   ];
 
+  const statusColor = (s) => {
+    const m = {
+      completed: 'bg-green-100 text-green-700',
+      pending: 'bg-yellow-100 text-yellow-700',
+      in_progress: 'bg-blue-100 text-blue-700',
+      cancelled: 'bg-red-100 text-red-700',
+    };
+    return m[s] || 'bg-gray-100 text-gray-700';
+  };
+
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem 1rem' }}>
+    <div className="space-y-8">
       {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.875rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.25rem' }}>Admin Dashboard</h1>
-        <p style={{ color: '#64748b' }}>Platform management and overview</p>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-800">Platform Overview</h1>
+        <p className="text-gray-500 mt-1 text-sm">Real-time dashboard for Gharelu Sewa operations</p>
       </div>
 
-      {/* Stats */}
+      {/* KPI Cards */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-          <Loader style={{ width: 28, height: 28, margin: '0 auto 0.75rem' }} />
-          <p>Loading stats…</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-28 rounded-2xl bg-gray-100 animate-pulse" />
+          ))}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-          {kpis.map(kpi => {
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {kpis.map((kpi) => {
             const Icon = kpi.icon;
             return (
-              <div key={kpi.label} style={{ background: kpi.bg, borderRadius: '14px', padding: '1.25rem', border: `1px solid ${kpi.color}22` }}>
-                <Icon style={{ width: 22, height: 22, color: kpi.color, marginBottom: '0.75rem' }} />
-                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: kpi.color, lineHeight: 1 }}>{kpi.value}</div>
-                <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '4px', fontWeight: 500 }}>{kpi.label}</div>
+              <div
+                key={kpi.label}
+                className="rounded-2xl p-5 text-white relative overflow-hidden shadow-lg"
+                style={{ background: kpi.bg }}
+              >
+                <div className="absolute right-3 top-3 opacity-20">
+                  <Icon className="w-16 h-16" />
+                </div>
+                <Icon className="w-5 h-5 mb-3 opacity-90" />
+                <div className="text-3xl font-black leading-none">{kpi.value}</div>
+                <div className="text-sm font-bold mt-1 opacity-95">{kpi.label}</div>
+                <div className="text-xs opacity-70 mt-0.5">{kpi.sub}</div>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Quick Access Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-        {[
-          {
-            title: 'Manage Providers',
-            desc: 'Review KYC submissions, verify or reject provider applications',
-            icon: Shield,
-            color: '#6366f1',
-            link: '/admin/providers',
-            linkLabel: 'View Providers',
-            badge: stats?.pending_providers ? `${stats.pending_providers} pending` : null,
-            badgeBg: '#fef9c3',
-            badgeColor: '#92400e',
-          },
-          {
-            title: 'Analytics & Revenue',
-            desc: 'Platform performance, revenue reports, booking trends',
-            icon: BarChart2,
-            color: '#16a34a',
-            link: '/admin/analytics',
-            linkLabel: 'View Analytics',
-            badge: null,
-          },
-        ].map(card => {
-          const Icon = card.icon;
-          return (
-            <div key={card.title} style={{ background: 'white', borderRadius: '16px', border: '1px solid #f1f5f9', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <div style={{ background: `${card.color}15`, borderRadius: '10px', padding: '0.625rem' }}>
-                  <Icon style={{ width: 22, height: 22, color: card.color }} />
-                </div>
-                {card.badge && (
-                  <span style={{ background: card.badgeBg, color: card.badgeColor, padding: '3px 10px', borderRadius: 20, fontSize: '0.73rem', fontWeight: 700 }}>
-                    {card.badge}
+      {/* Two-column panels */}
+      <div className="grid lg:grid-cols-2 gap-6">
+
+        {/* Recent Bookings */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+            <h2 className="font-bold text-gray-800 flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[#07535f]" /> Recent Bookings
+            </h2>
+            <Link to="/admin/bookings" className="text-xs text-[#07535f] font-bold hover:underline flex items-center gap-1">
+              View All <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {recentBookings.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 text-sm">No bookings found</div>
+            ) : (
+              recentBookings.map((b) => (
+                <div key={b.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50/50">
+                  <div>
+                    <p className="text-sm font-bold text-gray-800">{b.service_category}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{b.customer_name} → {b.provider_name || 'Unassigned'}</p>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColor(b.status)}`}>
+                    {b.status?.replace('_', ' ')}
                   </span>
-                )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Pending KYC */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+            <h2 className="font-bold text-gray-800 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-amber-500" /> Pending KYC Verifications
+              {pendingProviders.length > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{pendingProviders.length}</span>
+              )}
+            </h2>
+            <Link to="/admin/providers" className="text-xs text-[#07535f] font-bold hover:underline flex items-center gap-1">
+              Review All <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {pendingProviders.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 text-sm">
+                <CheckCircle className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                All providers are verified! 🎉
               </div>
-              <h3 style={{ fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem', fontSize: '1.05rem' }}>{card.title}</h3>
-              <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>{card.desc}</p>
-              <Link
-                to={card.link}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', color: card.color, fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}
-              >
-                {card.linkLabel} <ArrowRight style={{ width: 16, height: 16 }} />
-              </Link>
-            </div>
+            ) : (
+              pendingProviders.map((p) => (
+                <div key={p.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50/50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-[#07535f]/10 flex items-center justify-center text-[#07535f] font-bold text-sm">
+                      {p.name?.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-800">{p.name}</p>
+                      <p className="text-xs text-gray-400">{p.service_category || 'General'} • {p.ward || 'N/A'}</p>
+                    </div>
+                  </div>
+                  <Link
+                    to="/admin/providers"
+                    className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors"
+                  >
+                    Review
+                  </Link>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Verify Providers', to: '/admin/providers', icon: Shield, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+          { label: 'View All Users', to: '/admin/users', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+          { label: 'All Bookings', to: '/admin/bookings', icon: Calendar, color: 'text-sky-600', bg: 'bg-sky-50', border: 'border-sky-100' },
+          { label: 'Analytics', to: '/admin/analytics', icon: BarChart2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+        ].map((action) => {
+          const Icon = action.icon;
+          return (
+            <Link
+              key={action.label}
+              to={action.to}
+              className={`flex flex-col items-center gap-3 p-5 rounded-2xl border ${action.bg} ${action.border} hover:shadow-md transition-all group`}
+            >
+              <div className={`w-10 h-10 rounded-xl ${action.bg} border ${action.border} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                <Icon className={`w-5 h-5 ${action.color}`} />
+              </div>
+              <span className={`text-xs font-bold ${action.color}`}>{action.label}</span>
+            </Link>
           );
         })}
       </div>
