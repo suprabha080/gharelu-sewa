@@ -38,6 +38,9 @@ function ChangeView({ center }) {
 
 export default function LiveTracking() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const booking = location.state?.booking || {};
+
   const [currentStatus, setCurrentStatus] = useState(1);
   
   // Coordinates for Pokhara, Nepal
@@ -48,9 +51,12 @@ export default function LiveTracking() {
   const [distance, setDistance] = useState(2.4);
   const [timeRemaining, setTimeRemaining] = useState(12);
 
+  const providerName = booking.provider_name || 'Rajesh Shrestha (Demo)';
+  const serviceCat = booking.service_category || 'Expert Service';
+
   const statuses = [
     { label: 'Booking Confirmed', time: '10:32 AM', desc: 'System received and validated request.' },
-    { label: 'Provider Assigned', time: '10:35 AM', desc: 'Rajesh Shrestha accepted the job.' },
+    { label: 'Provider Assigned', time: '10:35 AM', desc: `${providerName} accepted the job.` },
     { label: 'Provider En Route', time: 'Pending', desc: 'Provider is traveling to your location.' },
     { label: 'Work In Progress', time: 'Pending', desc: 'Repair work is currently underway.' },
     { label: 'Job Completed', time: 'Pending', desc: 'Job finished. Invoice generated.' }
@@ -109,7 +115,7 @@ export default function LiveTracking() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 font-serif">Live Job Tracking</h1>
-            <p className="text-xs text-gray-400 mt-1 font-mono">Booking #GS-20261105-789</p>
+            <p className="text-xs text-gray-400 mt-1 font-mono">Booking #{booking.id ? `GS-2024-${booking.id}` : 'GS-2024-DEMO'}</p>
           </div>
           <div className="flex items-center">
             <span className="inline-flex items-center gap-1.5 bg-[#d1fae5] text-[#065f46] px-3.5 py-1.5 rounded-full text-xs font-bold shadow-sm">
@@ -131,12 +137,12 @@ export default function LiveTracking() {
                 <div className="flex items-center gap-4">
                   <img
                     src="https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150"
-                    alt="Rajesh Shrestha"
+                    alt={providerName}
                     className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-100"
                   />
                   <div>
-                    <h2 className="font-bold text-gray-800 text-base">Rajesh Shrestha</h2>
-                    <p className="text-xs text-gray-400 font-medium">Plumbing Expert</p>
+                    <h2 className="font-bold text-gray-800 text-base">{providerName}</h2>
+                    <p className="text-xs text-gray-400 font-medium">{serviceCat}</p>
                     <div className="flex items-center gap-1 mt-1 text-xs">
                       <span className="text-yellow-500 font-extrabold">★ 4.9</span>
                       <span className="text-gray-400">(142 jobs)</span>
@@ -256,7 +262,7 @@ export default function LiveTracking() {
                     <Marker position={providerPos} icon={providerIcon}>
                       <Popup>
                         <div className="text-center">
-                          <p className="font-bold text-[#07535f] text-xs">Rajesh Shrestha</p>
+                          <p className="font-bold text-[#07535f] text-xs">{providerName}</p>
                           <p className="text-gray-500 text-[10px]">
                             {timeRemaining > 0 ? `~${timeRemaining} mins away` : 'Arrived'}
                           </p>

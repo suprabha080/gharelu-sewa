@@ -125,7 +125,7 @@ export default function BookingDetails() {
           {!isProvider && (
             <div className="flex gap-3">
               {booking.status === 'in_progress' && (
-                <Link to="/track" className="bg-[#10b981] hover:bg-[#0ea572] text-white px-6 py-2.5 rounded-full font-bold shadow-sm transition-colors text-sm flex items-center gap-1.5">
+                <Link to="/track" state={{ booking }} className="bg-[#10b981] hover:bg-[#0ea572] text-white px-6 py-2.5 rounded-full font-bold shadow-sm transition-colors text-sm flex items-center gap-1.5">
                   🗺 Live Track Provider
                 </Link>
               )}

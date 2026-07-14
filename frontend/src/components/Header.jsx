@@ -71,29 +71,18 @@ export const Header = () => {
         return '/';
     }
   };
-  // Mock toggle between User and Provider
-  const currentRole = user?.role || 'customer';
-
-  const handleRoleToggle = async (newRole) => {
-    try {
-      if (newRole === 'customer') {
-        await login('priya@gmail.com', 'password');
-        navigate('/');
-      } else if (newRole === 'provider') {
-        await login('rajesh@gmail.com', 'password');
-        navigate('/provider');
-      }
-    } catch (err) {
-      console.warn('Authentication switch error:', err);
-      // Fallback redirection if DB/Auth is offline
-      if (newRole === 'customer') {
-        navigate('/');
-      } else {
-        navigate('/provider');
-      }
+  const getRoleBadge = () => {
+    if (!user) return null;
+    switch (user.role) {
+      case 'admin':
+        return { label: 'Admin', color: '#6366f1', bg: '#ede9fe' };
+      case 'provider':
+        return { label: 'Provider', color: '#0ea5e9', bg: '#e0f2fe' };
+      default:
+        return { label: 'User', color: '#10b981', bg: '#d1fae5' };
     }
   };
-
+  const roleBadge = getRoleBadge();
 
 
   return (
@@ -114,7 +103,7 @@ export const Header = () => {
 
           {/* Center Navigation — role-aware */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
-            {currentRole === 'provider' ? (
+            {user?.role === 'provider' ? (
               /* Provider Nav */
               <>
                 <Link
@@ -154,7 +143,7 @@ export const Header = () => {
                   <span>Earnings</span>
                 </Link>
               </>
-            ) : currentRole === 'admin' ? (
+            ) : user?.role === 'admin' ? (
               /* Admin Nav */
               <>
                 <Link
@@ -227,30 +216,18 @@ export const Header = () => {
           </nav>
 
           {/* Right Section */}
-          <div className="flex items-center gap-4">
-            {/* User / Provider toggle switch */}
-            <div className="bg-gray-100 p-0.5 rounded-full flex items-center text-xs font-semibold text-gray-500">
-              <button
-                onClick={() => handleRoleToggle('customer')}
-                className={`px-3 py-1 rounded-full transition-all ${
-                  currentRole === 'customer' || currentRole === 'admin'
-                    ? 'bg-white text-gray-800 shadow-sm font-bold'
-                    : 'hover:text-gray-800'
-                }`}
+          <div className="flex items-center gap-3">
+
+            {/* Role Badge — only shown when logged in */}
+            {isAuthenticated && roleBadge && (
+              <span
+                style={{ background: roleBadge.bg, color: roleBadge.color }}
+                className="hidden md:inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border"
+                style={{ background: roleBadge.bg, color: roleBadge.color, border: `1px solid ${roleBadge.color}30` }}
               >
-                User
-              </button>
-              <button
-                onClick={() => handleRoleToggle('provider')}
-                className={`px-3 py-1 rounded-full transition-all ${
-                  currentRole === 'provider'
-                    ? 'bg-white text-gray-800 shadow-sm font-bold'
-                    : 'hover:text-gray-800'
-                }`}
-              >
-                Provider
-              </button>
-            </div>
+                {roleBadge.label}
+              </span>
+            )}
 
             {/* Notifications */}
             <div className="relative">
@@ -299,26 +276,36 @@ export const Header = () => {
               )}
             </div>
 
-            {/* User Profile */}
+            {/* User Profile / Auth Buttons */}
             {isAuthenticated ? (
-              <div className="flex items-center gap-2 border-l border-gray-100 pl-4">
+              <div className="flex items-center gap-2 border-l border-gray-100 pl-3">
                 <img
                   src={user?.avatar_url || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"}
-                  alt={user?.name || "Priya M."}
+                  alt={user?.name || 'User'}
                   className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100"
                 />
-                <div className="hidden lg:flex items-center gap-1 cursor-pointer group" onClick={() => logout()}>
-                  <span className="text-xs font-semibold text-gray-700 group-hover:text-red-500 transition-colors">
-                    {user?.name || "Priya M."}
-                  </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-red-500" />
+                <div className="hidden lg:flex flex-col min-w-0">
+                  <span className="text-xs font-bold text-gray-800 truncate max-w-[90px]">{user?.name}</span>
+                  <Link
+                    to={getRolePath()}
+                    className="text-[10px] text-[#07535f] font-semibold hover:underline"
+                  >
+                    Dashboard
+                  </Link>
                 </div>
+                <button
+                  onClick={() => { logout(); navigate('/login'); }}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-all"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Sign Out
+                </button>
               </div>
             ) : (
               <div className="flex gap-2">
                 <Link
                   to="/login"
-                  className="px-3 py-1.5 text-sm font-medium text-[#07535f] hover:bg-gray-50 rounded-lg transition-all"
+                  className="px-3 py-1.5 text-sm font-medium text-[#07535f] hover:bg-gray-50 rounded-lg transition-all border border-gray-200"
                 >
                   Sign In
                 </Link>
@@ -344,31 +331,92 @@ export const Header = () => {
         {/* Mobile Menu */}
         {showMenu && (
           <div className="md:hidden pb-4 border-t border-gray-100">
-            <nav className="flex flex-col gap-3 mt-3 text-sm font-medium text-gray-600">
-              <Link to="/" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-                <Home className="w-4 h-4" /> Home
-              </Link>
-              <Link to="/customer/browse" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-                <Search className="w-4 h-4" /> Services
-              </Link>
-              <Link to="/book" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg bg-[#07535f] text-white flex items-center gap-2 justify-center font-bold">
-                <Calendar className="w-4 h-4" /> Book Now
-              </Link>
-              <Link to="/track" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-                <User className="w-4 h-4" /> Track Job
-              </Link>
-              {isAuthenticated && (
-                <button
-                  onClick={() => {
-                    logout();
-                    setShowMenu(false);
-                    navigate('/login');
-                  }}
-                  className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 w-full text-left"
-                >
-                  <LogOut className="w-4 h-4" /> Logout
-                </button>
+            <nav className="flex flex-col gap-1 mt-3 text-sm font-medium text-gray-600">
+
+              {/* Role Badge on mobile */}
+              {isAuthenticated && roleBadge && (
+                <div className="px-3 py-2 flex items-center gap-2">
+                  <span
+                    style={{ background: roleBadge.bg, color: roleBadge.color, border: `1px solid ${roleBadge.color}40` }}
+                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold"
+                  >
+                    {roleBadge.label}
+                  </span>
+                  <span className="text-sm font-semibold text-gray-700">{user?.name}</span>
+                </div>
               )}
+
+              {/* Role-specific mobile nav links */}
+              {user?.role === 'admin' ? (
+                <>
+                  <Link to="/admin" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Home className="w-4 h-4" /> Admin Dashboard
+                  </Link>
+                  <Link to="/admin/providers" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Shield className="w-4 h-4" /> KYC Verifications
+                  </Link>
+                  <Link to="/admin/users" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <User className="w-4 h-4" /> User Database
+                  </Link>
+                  <Link to="/admin/analytics" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <BarChart2 className="w-4 h-4" /> Analytics
+                  </Link>
+                </>
+              ) : user?.role === 'provider' ? (
+                <>
+                  <Link to="/provider" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Home className="w-4 h-4" /> Dashboard
+                  </Link>
+                  <Link to="/provider/find-jobs" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Search className="w-4 h-4" /> Browse Jobs
+                  </Link>
+                  <Link to="/provider/bookings" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Calendar className="w-4 h-4" /> My Bookings
+                  </Link>
+                  <Link to="/provider/earnings" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <User className="w-4 h-4" /> Earnings
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Home className="w-4 h-4" /> Home
+                  </Link>
+                  <Link to="/customer/browse" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Search className="w-4 h-4" /> Services
+                  </Link>
+                  <Link to="/book" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg bg-[#07535f] text-white flex items-center gap-2 justify-center font-bold">
+                    <Calendar className="w-4 h-4" /> Book Now
+                  </Link>
+                  <Link to="/track" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <User className="w-4 h-4" /> Track Job
+                  </Link>
+                </>
+              )}
+
+              <div className="border-t border-gray-100 mt-2 pt-2">
+                {isAuthenticated ? (
+                  <button
+                    onClick={() => {
+                      logout();
+                      setShowMenu(false);
+                      navigate('/login');
+                    }}
+                    className="w-full px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 font-bold"
+                  >
+                    <LogOut className="w-4 h-4" /> Sign Out
+                  </button>
+                ) : (
+                  <div className="flex gap-2 px-3">
+                    <Link to="/login" onClick={() => setShowMenu(false)} className="flex-1 text-center py-2 text-sm font-medium text-[#07535f] border border-gray-200 rounded-lg hover:bg-gray-50">
+                      Sign In
+                    </Link>
+                    <Link to="/register" onClick={() => setShowMenu(false)} className="flex-1 text-center py-2 text-sm font-semibold text-white bg-[#07535f] rounded-lg hover:bg-[#06424b]">
+                      Sign Up
+                    </Link>
+                  </div>
+                )}
+              </div>
             </nav>
           </div>
         )}
