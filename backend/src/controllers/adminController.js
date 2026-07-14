@@ -5,7 +5,9 @@ export const getPlatformStats = async (req, res) => {
   try {
     const stats = await query(`
       SELECT 
+        (SELECT COUNT(*) FROM users) as total_users,
         (SELECT COUNT(*) FROM users WHERE role = 'customer') as total_customers,
+        (SELECT COUNT(*) FROM users WHERE role = 'provider') as total_providers,
         (SELECT COUNT(*) FROM users WHERE role = 'provider' AND is_verified = TRUE) as verified_providers,
         (SELECT COUNT(*) FROM users WHERE role = 'provider' AND is_verified = FALSE) as pending_providers,
         (SELECT COUNT(*) FROM bookings) as total_bookings,
