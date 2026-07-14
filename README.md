@@ -24,10 +24,13 @@ npm install
 # Create .env file
 cp .env.example .env
 
-# Edit .env with your database credentials
+# Edit .env with your database credentials (required before starting!)
 nano .env
 
-# Initialize database
+# Initialize database (creates tables and mock data)
+npm run init-db
+
+# Start development server
 npm run dev
 ```
 
