@@ -1,14 +1,61 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { notificationAPI } from '../services/api';
+import { onNotification } from '../services/socket';
 import { 
   LayoutDashboard, Users, Calendar, ShieldCheck, 
   BarChart2, LogOut, Settings, Bell, Menu, X, ArrowLeft
 } from 'lucide-react';
 
 export default function AdminLayout({ children }) {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const location = useLocation();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      notificationAPI.getNotifications({ limit: 5 })
+        .then(res => {
+          const fetchedNotifs = Array.isArray(res.data) ? res.data : (res.data?.notifications || []);
+          setNotifications(fetchedNotifs);
+        })
+        .catch(err => console.warn('Failed to fetch admin notifications', err));
+
+      notificationAPI.getUnreadCount()
+        .then(res => {
+          setUnreadCount(res.data?.count || 0);
+        })
+        .catch(err => console.warn('Failed to fetch admin unread count', err));
+
+      onNotification((data) => {
+        setNotifications(prev => [{ ...data, id: Date.now(), created_at: new Date().toISOString() }, ...prev]);
+        setUnreadCount(prev => prev + 1);
+      });
+    }
+  }, [isAuthenticated]);
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await notificationAPI.markAsRead(id);
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    } catch (err) {
+      console.warn('Failed to mark notification as read', err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationAPI.markAllAsRead();
+      setUnreadCount(0);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch (err) {
+      console.warn('Failed to mark all as read', err);
+    }
+  };
 
   const menuItems = [
     { label: 'Overview Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -95,11 +142,49 @@ export default function AdminLayout({ children }) {
           </div>
           <div className="flex items-center gap-4">
             <div className="relative">
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></span>
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
-              <Bell className="w-5 h-5 text-gray-500 cursor-pointer hover:text-gray-800 transition-colors" />
+              <button 
+                className="relative p-2 text-gray-500 hover:text-gray-800 transition-colors focus:outline-none"
+                onClick={() => setShowNotifications(!showNotifications)}
+              >
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                )}
+                <Bell className="w-5 h-5" />
+              </button>
+
+              {/* Admin Notifications Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                  <div className="p-3 border-b border-gray-50 font-bold text-gray-800 flex justify-between items-center bg-gray-50/50">
+                    <span>Admin Alerts</span>
+                    {unreadCount > 0 && (
+                      <button onClick={handleMarkAllAsRead} className="text-[10px] text-[#07535f] hover:underline font-semibold bg-[#07535f]/10 px-2 py-1 rounded-full">
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center text-gray-400 text-sm">No new alerts</div>
+                    ) : (
+                      notifications.map(n => (
+                        <div
+                          key={n.id}
+                          className={`p-3 border-b border-gray-50 text-sm hover:bg-gray-50 transition-colors cursor-pointer ${!n.is_read ? 'bg-blue-50/30' : ''}`}
+                          onClick={() => !n.is_read && handleMarkAsRead(n.id)}
+                        >
+                          <div className="text-gray-700">{n.message}</div>
+                          <div className="text-xs text-gray-400 mt-1 font-medium">
+                            {n.created_at ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="h-6 w-px bg-gray-250"></div>
+            <div className="h-6 w-px bg-gray-200"></div>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
               <span className="text-xs font-bold text-gray-600">Database Connected</span>

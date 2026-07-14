@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Bell, LogOut, Home, Search, Calendar, User, ChevronDown, Shield, BarChart2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { notificationAPI } from '../services/api';
+import { onNotification } from '../services/socket';
 
 export const Header = () => {
   const { user, logout, isAuthenticated, login } = useAuth();
@@ -10,7 +12,65 @@ export const Header = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Fetch initial notifications
+      notificationAPI.getNotifications({ limit: 5 })
+        .then(res => {
+          const fetchedNotifs = Array.isArray(res.data) ? res.data : (res.data?.notifications || []);
+          setNotifications(fetchedNotifs);
+        })
+        .catch(err => console.warn('Failed to fetch notifications', err));
+
+      notificationAPI.getUnreadCount()
+        .then(res => {
+          setUnreadCount(res.data?.count || 0);
+        })
+        .catch(err => console.warn('Failed to fetch unread count', err));
+
+      // Listen for incoming socket notifications
+      onNotification((data) => {
+        setNotifications(prev => [{ ...data, id: Date.now(), created_at: new Date().toISOString() }, ...prev]);
+        setUnreadCount(prev => prev + 1);
+      });
+    }
+  }, [isAuthenticated]);
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await notificationAPI.markAsRead(id);
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    } catch (err) {
+      console.warn('Failed to mark notification as read', err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationAPI.markAllAsRead();
+      setUnreadCount(0);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch (err) {
+      console.warn('Failed to mark all as read', err);
+    }
+  };
+
+  const getRolePath = () => {
+    if (!user) return '/';
+    switch (user.role) {
+      case 'customer':
+        return '/';
+      case 'provider':
+        return '/provider';
+      case 'admin':
+        return '/admin';
+      default:
+        return '/';
+    }
+  };
   // Mock toggle between User and Provider
   const currentRole = user?.role || 'customer';
 
@@ -34,24 +94,7 @@ export const Header = () => {
     }
   };
 
-  const getRolePath = () => {
-    if (!user) return '/';
-    switch (user.role) {
-      case 'customer':
-        return '/';
-      case 'provider':
-        return '/provider';
-      case 'admin':
-        return '/admin';
-      default:
-        return '/';
-    }
-  };
 
-  const notifications = [
-    { id: 1, message: 'Rajesh Shrestha has been assigned to your service request.', time: '10:35 AM' },
-    { id: 2, message: 'Booking #GS-20241105-789 has been confirmed.', time: '10:32 AM' }
-  ];
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
@@ -226,23 +269,28 @@ export const Header = () => {
               {/* Notifications Dropdown */}
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
-                  <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 text-sm">Notifications</h3>
-                    <button 
-                      onClick={() => setUnreadCount(0)}
-                      className="text-xs text-[#07535f] hover:underline"
-                    >
-                      Mark all as read
-                    </button>
-                  </div>
-                  <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
-                    {unreadCount === 0 ? (
+                    <div className="p-3 border-b border-gray-50 font-bold text-gray-800 flex justify-between items-center bg-gray-50/50">
+                      <span>Notifications</span>
+                      {unreadCount > 0 && (
+                        <button onClick={handleMarkAllAsRead} className="text-[10px] text-[#07535f] hover:underline font-semibold bg-[#07535f]/10 px-2 py-1 rounded-full">
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
                       <div className="p-6 text-center text-gray-400 text-sm">No new notifications</div>
                     ) : (
                       notifications.map(n => (
-                        <div key={n.id} className="p-4 hover:bg-gray-50 transition-colors">
-                          <p className="text-xs text-gray-700 font-medium">{n.message}</p>
-                          <span className="text-[10px] text-gray-400 block mt-1">{n.time}</span>
+                        <div
+                          key={n.id}
+                          className={`p-3 border-b border-gray-50 text-sm hover:bg-gray-50 transition-colors cursor-pointer ${!n.is_read ? 'bg-blue-50/30' : ''}`}
+                          onClick={() => !n.is_read && handleMarkAsRead(n.id)}
+                        >
+                          <div className="text-gray-700">{n.message}</div>
+                          <div className="text-xs text-gray-400 mt-1 font-medium">
+                            {n.created_at ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                          </div>
                         </div>
                       ))
                     )}
