@@ -74,12 +74,12 @@ export default function AdminDashboard() {
       sub: 'Currently in progress',
     },
     {
-      label: 'Avg Rating',
-      value: stats?.avg_platform_rating ? Number(stats.avg_platform_rating).toFixed(1) : '—',
-      icon: Star,
+      label: 'Total Revenue',
+      value: `Rs. ${stats?.total_revenue || 0}`,
+      icon: DollarSign,
       color: '#f59e0b',
       bg: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
-      sub: 'Platform-wide',
+      sub: 'Platform commission',
     },
   ];
 

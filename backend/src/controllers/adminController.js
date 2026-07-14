@@ -12,7 +12,8 @@ export const getPlatformStats = async (req, res) => {
         (SELECT COUNT(*) FROM bookings WHERE status = 'completed') as completed_bookings,
         (SELECT COUNT(*) FROM bookings WHERE status = 'in_progress') as active_bookings,
         (SELECT AVG(rating_avg) FROM provider_profiles) as avg_platform_rating,
-        (SELECT COUNT(*) FROM service_categories) as total_categories
+        (SELECT COUNT(*) FROM service_categories) as total_categories,
+        (SELECT COALESCE(SUM(commission), 0) FROM payments WHERE status = 'completed') as total_revenue
     `);
 
     res.json(stats.rows[0]);
@@ -158,8 +159,10 @@ export const getAnalytics = async (req, res) => {
         DATE_TRUNC('day', b.created_at)::DATE as date,
         COUNT(*) as bookings_created,
         SUM(CASE WHEN b.status = 'completed' THEN 1 ELSE 0 END) as bookings_completed,
-        SUM(CASE WHEN b.status = 'cancelled' THEN 1 ELSE 0 END) as bookings_cancelled
+        SUM(CASE WHEN b.status = 'cancelled' THEN 1 ELSE 0 END) as bookings_cancelled,
+        COALESCE(SUM(p.commission), 0) as daily_revenue
       FROM bookings b
+      LEFT JOIN payments p ON b.id = p.booking_id AND p.status = 'completed'
       WHERE b.created_at >= CURRENT_DATE - INTERVAL '1 day' * $1
       GROUP BY DATE_TRUNC('day', b.created_at)
       ORDER BY date DESC
