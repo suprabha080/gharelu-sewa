@@ -86,7 +86,7 @@ export const login = async (req, res) => {
 
     // Find user
     const result = await query(
-      'SELECT id, name, email, password_hash, role FROM users WHERE email = $1 AND is_active = TRUE',
+      'SELECT id, name, email, password_hash, role, is_verified FROM users WHERE email = $1 AND is_active = TRUE',
       [email]
     );
 
@@ -115,6 +115,7 @@ export const login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        is_verified: user.is_verified,
       },
       token,
     });

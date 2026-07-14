@@ -11,15 +11,17 @@ import {
 import { format, isToday } from 'date-fns';
 
 export default function ProviderDashboard() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [availability, setAvailability] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
 
   useEffect(() => {
+    // Refresh user data to get latest KYC status
+    refreshUser();
     fetchDashboardData();
-  }, []);
+  }, [refreshUser]);
 
   const fetchDashboardData = async () => {
     try {
