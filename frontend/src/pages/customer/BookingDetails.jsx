@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Card from '../../components/Card';
 import Chat from '../../components/Chat';
-import { bookingAPI } from '../../services/api';
+import { bookingAPI, reviewAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { MapPin, Calendar, Wrench, CheckCircle, XCircle, PlayCircle, AlertCircle } from 'lucide-react';
+import { MapPin, Calendar, Wrench, CheckCircle, XCircle, PlayCircle, AlertCircle, Star } from 'lucide-react';
 import { format } from 'date-fns';
 
 const STATUS_COLORS = {
@@ -15,6 +15,32 @@ const STATUS_COLORS = {
   cancelled:   { bg: 'bg-red-100',   text: 'text-red-800',   icon: <XCircle className="w-4 h-4" /> },
 };
 
+function StarRating({ rating, setRating }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => setRating(star)}
+          onMouseEnter={() => setHovered(star)}
+          onMouseLeave={() => setHovered(0)}
+          className="focus:outline-none transition-transform hover:scale-110"
+        >
+          <Star
+            className={`w-9 h-9 transition-colors ${
+              star <= (hovered || rating)
+                ? 'text-yellow-400 fill-yellow-400'
+                : 'text-gray-300'
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function BookingDetails() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
@@ -23,6 +49,14 @@ export default function BookingDetails() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Review state
+  const [existingReview, setExistingReview] = useState(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [reviewError, setReviewError] = useState('');
 
   useEffect(() => {
     fetchBookingDetails();
@@ -35,6 +69,19 @@ export default function BookingDetails() {
       const b = list.find(item => item.id === parseInt(bookingId));
       if (b) {
         setBooking(b);
+        // Check for existing review if completed
+        if (b.status === 'completed') {
+          try {
+            const reviewRes = await reviewAPI.getBookingReview(b.id);
+            if (reviewRes.data) {
+              setExistingReview(reviewRes.data);
+              setReviewRating(reviewRes.data.rating);
+              setReviewComment(reviewRes.data.comment || '');
+            }
+          } catch {
+            // No review yet, that's fine
+          }
+        }
       } else {
         setError('Booking not found');
       }
@@ -59,11 +106,36 @@ export default function BookingDetails() {
     }
   };
 
+  const submitReview = async (e) => {
+    e.preventDefault();
+    if (reviewRating === 0) {
+      setReviewError('Please select a star rating.');
+      return;
+    }
+    setReviewSubmitting(true);
+    setReviewError('');
+    try {
+      await reviewAPI.createReview({
+        booking_id: booking.id,
+        rating: reviewRating,
+        comment: reviewComment,
+      });
+      setReviewSuccess(true);
+      setExistingReview({ rating: reviewRating, comment: reviewComment });
+    } catch (err) {
+      setReviewError(err?.response?.data?.error || 'Failed to submit review. Please try again.');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading booking...</div>;
   if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
 
   const isProvider = user?.role === 'provider';
   const statusStyle = STATUS_COLORS[booking.status] || STATUS_COLORS.pending;
+
+  const ratingLabels = { 1: 'Poor', 2: 'Fair', 3: 'Good', 4: 'Very Good', 5: 'Excellent' };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -194,9 +266,80 @@ export default function BookingDetails() {
             </Card>
           </div>
 
-          {/* Right: Live Chat */}
-          <div className="lg:col-span-2">
+          {/* Right: Chat + Review */}
+          <div className="lg:col-span-2 space-y-6">
             <Chat bookingId={booking.id} />
+
+            {/* ─── Review & Rating Section ─── */}
+            {!isProvider && booking.status === 'completed' && (
+              <Card className="p-6">
+                <h3 className="font-bold text-gray-800 text-lg mb-1 flex items-center gap-2">
+                  <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                  {existingReview ? 'Your Review' : 'Rate & Review the Service'}
+                </h3>
+                <p className="text-xs text-gray-400 mb-5">
+                  {existingReview ? 'Thank you for your feedback!' : 'How was your experience? Your review helps others choose the right provider.'}
+                </p>
+
+                {reviewSuccess || existingReview ? (
+                  /* Show submitted review */
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-5">
+                    <div className="flex items-center gap-1 mb-3">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          className={`w-6 h-6 ${s <= reviewRating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`}
+                        />
+                      ))}
+                      <span className="ml-2 text-sm font-bold text-gray-700">{ratingLabels[reviewRating]}</span>
+                    </div>
+                    {reviewComment && (
+                      <p className="text-sm text-gray-600 italic">"{reviewComment}"</p>
+                    )}
+                    <p className="text-xs text-green-600 font-semibold mt-3 flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> Review submitted successfully
+                    </p>
+                  </div>
+                ) : (
+                  /* Review Form */
+                  <form onSubmit={submitReview} className="space-y-5">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Your Rating *</label>
+                      <div className="flex items-center gap-3">
+                        <StarRating rating={reviewRating} setRating={setReviewRating} />
+                        {reviewRating > 0 && (
+                          <span className="text-sm font-bold text-gray-600">{ratingLabels[reviewRating]}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Your Comment (Optional)</label>
+                      <textarea
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        placeholder="Tell others about the quality of work, punctuality, and professionalism..."
+                        rows={4}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#07535f]/30 focus:border-[#07535f] resize-none transition-all"
+                      />
+                    </div>
+
+                    {reviewError && (
+                      <p className="text-xs text-red-500 font-semibold bg-red-50 px-3 py-2 rounded-lg">{reviewError}</p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={reviewSubmitting || reviewRating === 0}
+                      className="w-full bg-[#07535f] hover:bg-[#06424b] disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Star className="w-4 h-4" />
+                      {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                    </button>
+                  </form>
+                )}
+              </Card>
+            )}
           </div>
         </div>
       </div>
