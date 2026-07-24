@@ -32,6 +32,27 @@ export default function AdminDashboard() {
     });
   }, []);
 
+  const handleApprove = async (id) => {
+    try {
+      await adminAPI.verifyProvider(id);
+      setPendingProviders(prev => prev.filter(p => p.id !== id));
+      alert('Provider verified successfully!');
+    } catch (err) {
+      alert('Failed to verify provider.');
+    }
+  };
+
+  const handleReject = async (id) => {
+    if (!window.confirm('Are you sure you want to reject this provider?')) return;
+    try {
+      await adminAPI.rejectProvider(id);
+      setPendingProviders(prev => prev.filter(p => p.id !== id));
+      alert('Provider rejected.');
+    } catch (err) {
+      alert('Failed to reject provider.');
+    }
+  };
+
   const tabs = [
     { name: 'Overview', icon: LayoutGrid },
     { name: 'Users', icon: Users },
@@ -278,8 +299,18 @@ export default function AdminDashboard() {
                   <h4 className="font-bold text-gray-800">{p.name}</h4>
                   <p className="text-xs text-gray-400 mb-4">{p.service_category || 'General'} Specialist</p>
                   <div className="flex gap-2">
-                    <button className="flex-1 bg-[#07535f] text-white text-xs font-bold py-2 rounded-lg">Approve</button>
-                    <button className="flex-1 border border-red-200 text-red-500 text-xs font-bold py-2 rounded-lg hover:bg-red-50">Reject</button>
+                    <button 
+                      onClick={() => handleApprove(p.id)}
+                      className="flex-1 bg-[#07535f] text-white text-xs font-bold py-2 rounded-lg hover:bg-[#06424b] transition-colors"
+                    >
+                      Approve
+                    </button>
+                    <button 
+                      onClick={() => handleReject(p.id)}
+                      className="flex-1 border border-red-200 text-red-500 text-xs font-bold py-2 rounded-lg hover:bg-red-50 transition-colors"
+                    >
+                      Reject
+                    </button>
                   </div>
                 </div>
               ))
