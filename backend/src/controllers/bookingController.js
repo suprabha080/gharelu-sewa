@@ -1,4 +1,5 @@
 import { query } from '../config/database.js';
+import { sendNotification, notifyAllAdmins } from '../config/socketHelper.js';
 
 // Create booking (Customer)
 export const createBooking = async (req, res) => {
@@ -18,11 +19,26 @@ export const createBooking = async (req, res) => {
 
     const booking = result.rows[0];
 
-    // Create notification for provider
-    await query(
-      `INSERT INTO notifications (user_id, booking_id, message, type)
-       VALUES ($1, $2, $3, $4)`,
-      [provider_id, booking.id, `New booking request from customer`, 'booking_request']
+    // Get customer name for notification message
+    const customerResult = await query('SELECT name FROM users WHERE id = $1', [req.userId]);
+    const customerName = customerResult.rows[0]?.name || 'A customer';
+
+    // Get category name
+    const catResult = await query('SELECT name FROM service_categories WHERE id = $1', [category_id]);
+    const catName = catResult.rows[0]?.name || 'a service';
+
+    // ── Notify Provider ──
+    await sendNotification(
+      provider_id, booking.id,
+      `New ${catName} booking request from ${customerName}`,
+      'booking_request'
+    );
+
+    // ── Notify All Admins ──
+    await notifyAllAdmins(
+      booking.id,
+      `New booking #${booking.id}: ${customerName} booked ${catName}`,
+      'admin_new_booking'
     );
 
     res.status(201).json({
@@ -118,7 +134,17 @@ export const updateBookingStatus = async (req, res) => {
     }
 
     // Get booking first
-    const bookingResult = await query('SELECT customer_id, provider_id, status FROM bookings WHERE id = $1', [bookingId]);
+    const bookingResult = await query(
+      `SELECT b.customer_id, b.provider_id, b.status,
+              cu.name as customer_name, p.name as provider_name,
+              sc.name as service_category
+       FROM bookings b
+       JOIN users cu ON b.customer_id = cu.id
+       JOIN users p ON b.provider_id = p.id
+       JOIN service_categories sc ON b.category_id = sc.id
+       WHERE b.id = $1`,
+      [bookingId]
+    );
     if (bookingResult.rows.length === 0) {
       return res.status(404).json({ error: 'Booking not found' });
     }
@@ -136,12 +162,44 @@ export const updateBookingStatus = async (req, res) => {
       [status, bookingId]
     );
 
-    // Notify customer
-    await query(
-      `INSERT INTO notifications (user_id, booking_id, message, type)
-       VALUES ($1, $2, $3, $4)`,
-      [booking.customer_id, bookingId, `Booking status changed to ${status}`, 'status_update']
-    );
+    // ── Build meaningful notification messages ──
+    const statusMessages = {
+      accepted: {
+        customer: `Great news! ${booking.provider_name} accepted your ${booking.service_category} booking #${bookingId}`,
+        admin: `Booking #${bookingId}: ${booking.provider_name} accepted ${booking.customer_name}'s ${booking.service_category} request`,
+        provider: null,
+      },
+      in_progress: {
+        customer: `${booking.provider_name} has started working on your ${booking.service_category} job #${bookingId}`,
+        admin: `Booking #${bookingId}: ${booking.provider_name} started work for ${booking.customer_name}`,
+        provider: null,
+      },
+      completed: {
+        customer: `Your ${booking.service_category} job #${bookingId} is now complete! Please leave a review and make payment.`,
+        admin: `Booking #${bookingId} completed: ${booking.provider_name} finished ${booking.service_category} for ${booking.customer_name}`,
+        provider: null,
+      },
+      cancelled: {
+        customer: `Booking #${bookingId} for ${booking.service_category} has been cancelled by the provider.`,
+        admin: `Booking #${bookingId} cancelled: ${booking.provider_name} declined ${booking.customer_name}'s ${booking.service_category} request`,
+        provider: null,
+      },
+    };
+
+    const msgs = statusMessages[status] || {
+      customer: `Booking #${bookingId} status changed to ${status}`,
+      admin: `Booking #${bookingId} status: ${status}`,
+    };
+
+    // ── Notify Customer ──
+    if (msgs.customer) {
+      await sendNotification(booking.customer_id, parseInt(bookingId), msgs.customer, `booking_${status}`);
+    }
+
+    // ── Notify All Admins ──
+    if (msgs.admin) {
+      await notifyAllAdmins(parseInt(bookingId), msgs.admin, `admin_booking_${status}`);
+    }
 
     res.json({
       message: 'Booking status updated',
@@ -158,7 +216,15 @@ export const cancelBooking = async (req, res) => {
   try {
     const { bookingId } = req.params;
 
-    const bookingResult = await query('SELECT customer_id, provider_id FROM bookings WHERE id = $1', [bookingId]);
+    const bookingResult = await query(
+      `SELECT b.customer_id, b.provider_id, cu.name as customer_name, p.name as provider_name, sc.name as service_category
+       FROM bookings b
+       JOIN users cu ON b.customer_id = cu.id
+       JOIN users p ON b.provider_id = p.id
+       JOIN service_categories sc ON b.category_id = sc.id
+       WHERE b.id = $1`,
+      [bookingId]
+    );
     if (bookingResult.rows.length === 0) {
       return res.status(404).json({ error: 'Booking not found' });
     }
@@ -175,12 +241,21 @@ export const cancelBooking = async (req, res) => {
       [bookingId]
     );
 
-    // Notify other party
+    const cancelledBy = req.userId === booking.customer_id ? booking.customer_name : booking.provider_name;
+
+    // ── Notify the other party ──
     const otherUserId = req.userId === booking.customer_id ? booking.provider_id : booking.customer_id;
-    await query(
-      `INSERT INTO notifications (user_id, booking_id, message, type)
-       VALUES ($1, $2, $3, $4)`,
-      [otherUserId, bookingId, 'Booking has been cancelled', 'booking_cancelled']
+    await sendNotification(
+      otherUserId, parseInt(bookingId),
+      `Booking #${bookingId} for ${booking.service_category} has been cancelled by ${cancelledBy}`,
+      'booking_cancelled'
+    );
+
+    // ── Notify All Admins ──
+    await notifyAllAdmins(
+      parseInt(bookingId),
+      `Booking #${bookingId} cancelled by ${cancelledBy} (${booking.service_category})`,
+      'admin_booking_cancelled'
     );
 
     res.json({
@@ -226,14 +301,25 @@ export const createEmergencyBooking = async (req, res) => {
 
     const booking = result.rows[0];
 
+    // Get customer name
+    const customerResult = await query('SELECT name FROM users WHERE id = $1', [req.userId]);
+    const customerName = customerResult.rows[0]?.name || 'A customer';
+
     // Notify all available providers
     for (const provider of providersResult.rows) {
-      await query(
-        `INSERT INTO notifications (user_id, booking_id, message, type)
-         VALUES ($1, $2, $3, $4)`,
-        [provider.id, booking.id, `URGENT: Emergency service request in ${ward}`, 'emergency_request']
+      await sendNotification(
+        provider.id, booking.id,
+        `🚨 URGENT: Emergency service request from ${customerName} in ${ward}`,
+        'emergency_request'
       );
     }
+
+    // ── Notify All Admins ──
+    await notifyAllAdmins(
+      booking.id,
+      `🚨 Emergency booking #${booking.id} from ${customerName} in ${ward}`,
+      'admin_emergency_booking'
+    );
 
     res.status(201).json({
       message: 'Emergency booking created and providers notified',

@@ -1,36 +1,63 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, Bell, LogOut, Home, Search, Calendar, User, ChevronDown } from 'lucide-react';
+import { Menu, X, Bell, LogOut, Home, Search, Calendar, User, ChevronDown, Shield, BarChart2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { notificationAPI } from '../services/api';
+import { onNotification } from '../services/socket';
+import { ToastContainer } from './ToastContainer';
 
 export const Header = () => {
   const { user, logout, isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const toastRef = useRef(null);
   const [showMenu, setShowMenu] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(2);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
-  // Mock toggle between User and Provider
-  const currentRole = user?.role || 'customer';
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Fetch initial notifications
+      notificationAPI.getNotifications({ limit: 5 })
+        .then(res => {
+          const fetchedNotifs = Array.isArray(res.data) ? res.data : (res.data?.notifications || []);
+          setNotifications(fetchedNotifs);
+        })
+        .catch(err => console.warn('Failed to fetch notifications', err));
 
-  const handleRoleToggle = async (newRole) => {
+      notificationAPI.getUnreadCount()
+        .then(res => {
+          setUnreadCount(res.data?.count || 0);
+        })
+        .catch(err => console.warn('Failed to fetch unread count', err));
+
+      // Listen for incoming socket notifications
+      onNotification((data) => {
+        setNotifications(prev => [{ ...data, id: Date.now(), created_at: new Date().toISOString() }, ...prev]);
+        setUnreadCount(prev => prev + 1);
+        toastRef.current?.addToast(data.message, data.type, data.bookingId);
+      });
+    }
+  }, [isAuthenticated]);
+
+  const handleMarkAsRead = async (id) => {
     try {
-      if (newRole === 'customer') {
-        await login('priya@gmail.com', 'password');
-        navigate('/');
-      } else if (newRole === 'provider') {
-        await login('rajesh@gmail.com', 'password');
-        navigate('/provider');
-      }
+      await notificationAPI.markAsRead(id);
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
     } catch (err) {
-      console.warn('Authentication switch error:', err);
-      // Fallback redirection if DB/Auth is offline
-      if (newRole === 'customer') {
-        navigate('/');
-      } else {
-        navigate('/provider');
-      }
+      console.warn('Failed to mark notification as read', err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationAPI.markAllAsRead();
+      setUnreadCount(0);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch (err) {
+      console.warn('Failed to mark all as read', err);
     }
   };
 
@@ -47,14 +74,23 @@ export const Header = () => {
         return '/';
     }
   };
+  const getRoleBadge = () => {
+    if (!user) return null;
+    switch (user.role) {
+      case 'admin':
+        return { label: 'Admin', color: '#6366f1', bg: '#ede9fe' };
+      case 'provider':
+        return { label: 'Provider', color: '#0ea5e9', bg: '#e0f2fe' };
+      default:
+        return { label: 'User', color: '#10b981', bg: '#d1fae5' };
+    }
+  };
+  const roleBadge = getRoleBadge();
 
-  const notifications = [
-    { id: 1, message: 'Rajesh Shrestha has been assigned to your service request.', time: '10:35 AM' },
-    { id: 2, message: 'Booking #GS-20241105-789 has been confirmed.', time: '10:32 AM' }
-  ];
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+    <>
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
@@ -71,7 +107,7 @@ export const Header = () => {
 
           {/* Center Navigation — role-aware */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
-            {currentRole === 'provider' ? (
+            {user?.role === 'provider' ? (
               /* Provider Nav */
               <>
                 <Link
@@ -109,6 +145,37 @@ export const Header = () => {
                 >
                   <User className="w-4 h-4" />
                   <span>Earnings</span>
+                </Link>
+              </>
+            ) : user?.role === 'admin' ? (
+              /* Admin Nav */
+              <>
+                <Link
+                  to="/admin"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/admin' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <Home className="w-4 h-4" />
+                  <span>Admin Dashboard</span>
+                </Link>
+                <Link
+                  to="/admin/providers"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/admin/providers' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <Shield className="w-4 h-4" />
+                  <span>KYC Verifications</span>
+                </Link>
+                <Link
+                  to="/admin/analytics"
+                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
+                    location.pathname === '/admin/analytics' ? 'text-[#07535f] font-semibold' : ''
+                  }`}
+                >
+                  <BarChart2 className="w-4 h-4" />
+                  <span>Analytics</span>
                 </Link>
               </>
             ) : (
@@ -153,30 +220,17 @@ export const Header = () => {
           </nav>
 
           {/* Right Section */}
-          <div className="flex items-center gap-4">
-            {/* User / Provider toggle switch */}
-            <div className="bg-gray-100 p-0.5 rounded-full flex items-center text-xs font-semibold text-gray-500">
-              <button
-                onClick={() => handleRoleToggle('customer')}
-                className={`px-3 py-1 rounded-full transition-all ${
-                  currentRole === 'customer' || currentRole === 'admin'
-                    ? 'bg-white text-gray-800 shadow-sm font-bold'
-                    : 'hover:text-gray-800'
-                }`}
+          <div className="flex items-center gap-3">
+
+            {/* Role Badge — only shown when logged in */}
+            {isAuthenticated && roleBadge && (
+              <span
+                className="hidden md:inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border"
+                style={{ background: roleBadge.bg, color: roleBadge.color, border: `1px solid ${roleBadge.color}30` }}
               >
-                User
-              </button>
-              <button
-                onClick={() => handleRoleToggle('provider')}
-                className={`px-3 py-1 rounded-full transition-all ${
-                  currentRole === 'provider'
-                    ? 'bg-white text-gray-800 shadow-sm font-bold'
-                    : 'hover:text-gray-800'
-                }`}
-              >
-                Provider
-              </button>
-            </div>
+                {roleBadge.label}
+              </span>
+            )}
 
             {/* Notifications */}
             <div className="relative">
@@ -195,23 +249,28 @@ export const Header = () => {
               {/* Notifications Dropdown */}
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
-                  <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 text-sm">Notifications</h3>
-                    <button 
-                      onClick={() => setUnreadCount(0)}
-                      className="text-xs text-[#07535f] hover:underline"
-                    >
-                      Mark all as read
-                    </button>
-                  </div>
-                  <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
-                    {unreadCount === 0 ? (
+                    <div className="p-3 border-b border-gray-50 font-bold text-gray-800 flex justify-between items-center bg-gray-50/50">
+                      <span>Notifications</span>
+                      {unreadCount > 0 && (
+                        <button onClick={handleMarkAllAsRead} className="text-[10px] text-[#07535f] hover:underline font-semibold bg-[#07535f]/10 px-2 py-1 rounded-full">
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
                       <div className="p-6 text-center text-gray-400 text-sm">No new notifications</div>
                     ) : (
                       notifications.map(n => (
-                        <div key={n.id} className="p-4 hover:bg-gray-50 transition-colors">
-                          <p className="text-xs text-gray-700 font-medium">{n.message}</p>
-                          <span className="text-[10px] text-gray-400 block mt-1">{n.time}</span>
+                        <div
+                          key={n.id}
+                          className={`p-3 border-b border-gray-50 text-sm hover:bg-gray-50 transition-colors cursor-pointer ${!n.is_read ? 'bg-blue-50/30' : ''}`}
+                          onClick={() => !n.is_read && handleMarkAsRead(n.id)}
+                        >
+                          <div className="text-gray-700">{n.message}</div>
+                          <div className="text-xs text-gray-400 mt-1 font-medium">
+                            {n.created_at ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                          </div>
                         </div>
                       ))
                     )}
@@ -220,26 +279,36 @@ export const Header = () => {
               )}
             </div>
 
-            {/* User Profile */}
+            {/* User Profile / Auth Buttons */}
             {isAuthenticated ? (
-              <div className="flex items-center gap-2 border-l border-gray-100 pl-4">
+              <div className="flex items-center gap-2 border-l border-gray-100 pl-3">
                 <img
                   src={user?.avatar_url || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"}
-                  alt={user?.name || "Priya M."}
+                  alt={user?.name || 'User'}
                   className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100"
                 />
-                <div className="hidden lg:flex items-center gap-1 cursor-pointer group" onClick={() => logout()}>
-                  <span className="text-xs font-semibold text-gray-700 group-hover:text-red-500 transition-colors">
-                    {user?.name || "Priya M."}
-                  </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-red-500" />
+                <div className="hidden lg:flex flex-col min-w-0">
+                  <span className="text-xs font-bold text-gray-800 truncate max-w-[90px]">{user?.name}</span>
+                  <Link
+                    to={getRolePath()}
+                    className="text-[10px] text-[#07535f] font-semibold hover:underline"
+                  >
+                    Dashboard
+                  </Link>
                 </div>
+                <button
+                  onClick={() => { logout(); navigate('/login'); }}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-all"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Sign Out
+                </button>
               </div>
             ) : (
               <div className="flex gap-2">
                 <Link
                   to="/login"
-                  className="px-3 py-1.5 text-sm font-medium text-[#07535f] hover:bg-gray-50 rounded-lg transition-all"
+                  className="px-3 py-1.5 text-sm font-medium text-[#07535f] hover:bg-gray-50 rounded-lg transition-all border border-gray-200"
                 >
                   Sign In
                 </Link>
@@ -265,36 +334,99 @@ export const Header = () => {
         {/* Mobile Menu */}
         {showMenu && (
           <div className="md:hidden pb-4 border-t border-gray-100">
-            <nav className="flex flex-col gap-3 mt-3 text-sm font-medium text-gray-600">
-              <Link to="/" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-                <Home className="w-4 h-4" /> Home
-              </Link>
-              <Link to="/customer/browse" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-                <Search className="w-4 h-4" /> Services
-              </Link>
-              <Link to="/book" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg bg-[#07535f] text-white flex items-center gap-2 justify-center font-bold">
-                <Calendar className="w-4 h-4" /> Book Now
-              </Link>
-              <Link to="/track" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-                <User className="w-4 h-4" /> Track Job
-              </Link>
-              {isAuthenticated && (
-                <button
-                  onClick={() => {
-                    logout();
-                    setShowMenu(false);
-                    navigate('/login');
-                  }}
-                  className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 w-full text-left"
-                >
-                  <LogOut className="w-4 h-4" /> Logout
-                </button>
+            <nav className="flex flex-col gap-1 mt-3 text-sm font-medium text-gray-600">
+
+              {/* Role Badge on mobile */}
+              {isAuthenticated && roleBadge && (
+                <div className="px-3 py-2 flex items-center gap-2">
+                  <span
+                    style={{ background: roleBadge.bg, color: roleBadge.color, border: `1px solid ${roleBadge.color}40` }}
+                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold"
+                  >
+                    {roleBadge.label}
+                  </span>
+                  <span className="text-sm font-semibold text-gray-700">{user?.name}</span>
+                </div>
               )}
+
+              {/* Role-specific mobile nav links */}
+              {user?.role === 'admin' ? (
+                <>
+                  <Link to="/admin" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Home className="w-4 h-4" /> Admin Dashboard
+                  </Link>
+                  <Link to="/admin/providers" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Shield className="w-4 h-4" /> KYC Verifications
+                  </Link>
+                  <Link to="/admin/users" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <User className="w-4 h-4" /> User Database
+                  </Link>
+                  <Link to="/admin/analytics" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <BarChart2 className="w-4 h-4" /> Analytics
+                  </Link>
+                </>
+              ) : user?.role === 'provider' ? (
+                <>
+                  <Link to="/provider" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Home className="w-4 h-4" /> Dashboard
+                  </Link>
+                  <Link to="/provider/find-jobs" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Search className="w-4 h-4" /> Browse Jobs
+                  </Link>
+                  <Link to="/provider/bookings" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Calendar className="w-4 h-4" /> My Bookings
+                  </Link>
+                  <Link to="/provider/earnings" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <User className="w-4 h-4" /> Earnings
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Home className="w-4 h-4" /> Home
+                  </Link>
+                  <Link to="/customer/browse" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <Search className="w-4 h-4" /> Services
+                  </Link>
+                  <Link to="/book" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg bg-[#07535f] text-white flex items-center gap-2 justify-center font-bold">
+                    <Calendar className="w-4 h-4" /> Book Now
+                  </Link>
+                  <Link to="/track" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <User className="w-4 h-4" /> Track Job
+                  </Link>
+                </>
+              )}
+
+              <div className="border-t border-gray-100 mt-2 pt-2">
+                {isAuthenticated ? (
+                  <button
+                    onClick={() => {
+                      logout();
+                      setShowMenu(false);
+                      navigate('/login');
+                    }}
+                    className="w-full px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 font-bold"
+                  >
+                    <LogOut className="w-4 h-4" /> Sign Out
+                  </button>
+                ) : (
+                  <div className="flex gap-2 px-3">
+                    <Link to="/login" onClick={() => setShowMenu(false)} className="flex-1 text-center py-2 text-sm font-medium text-[#07535f] border border-gray-200 rounded-lg hover:bg-gray-50">
+                      Sign In
+                    </Link>
+                    <Link to="/register" onClick={() => setShowMenu(false)} className="flex-1 text-center py-2 text-sm font-semibold text-white bg-[#07535f] rounded-lg hover:bg-[#06424b]">
+                      Sign Up
+                    </Link>
+                  </div>
+                )}
+              </div>
             </nav>
           </div>
         )}
       </div>
     </header>
+      <ToastContainer ref={toastRef} />
+    </>
   );
 };
 

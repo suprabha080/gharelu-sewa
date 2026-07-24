@@ -5,14 +5,17 @@ export const getPlatformStats = async (req, res) => {
   try {
     const stats = await query(`
       SELECT 
+        (SELECT COUNT(*) FROM users) as total_users,
         (SELECT COUNT(*) FROM users WHERE role = 'customer') as total_customers,
+        (SELECT COUNT(*) FROM users WHERE role = 'provider') as total_providers,
         (SELECT COUNT(*) FROM users WHERE role = 'provider' AND is_verified = TRUE) as verified_providers,
         (SELECT COUNT(*) FROM users WHERE role = 'provider' AND is_verified = FALSE) as pending_providers,
         (SELECT COUNT(*) FROM bookings) as total_bookings,
         (SELECT COUNT(*) FROM bookings WHERE status = 'completed') as completed_bookings,
         (SELECT COUNT(*) FROM bookings WHERE status = 'in_progress') as active_bookings,
         (SELECT AVG(rating_avg) FROM provider_profiles) as avg_platform_rating,
-        (SELECT COUNT(*) FROM service_categories) as total_categories
+        (SELECT COUNT(*) FROM service_categories) as total_categories,
+        (SELECT COALESCE(SUM(commission), 0) FROM payments WHERE status = 'completed') as total_revenue
     `);
 
     res.json(stats.rows[0]);
@@ -158,8 +161,10 @@ export const getAnalytics = async (req, res) => {
         DATE_TRUNC('day', b.created_at)::DATE as date,
         COUNT(*) as bookings_created,
         SUM(CASE WHEN b.status = 'completed' THEN 1 ELSE 0 END) as bookings_completed,
-        SUM(CASE WHEN b.status = 'cancelled' THEN 1 ELSE 0 END) as bookings_cancelled
+        SUM(CASE WHEN b.status = 'cancelled' THEN 1 ELSE 0 END) as bookings_cancelled,
+        COALESCE(SUM(p.commission), 0) as daily_revenue
       FROM bookings b
+      LEFT JOIN payments p ON b.id = p.booking_id AND p.status = 'completed'
       WHERE b.created_at >= CURRENT_DATE - INTERVAL '1 day' * $1
       GROUP BY DATE_TRUNC('day', b.created_at)
       ORDER BY date DESC
@@ -219,5 +224,81 @@ export const deactivateUser = async (req, res) => {
   } catch (error) {
     console.error('Deactivate user error:', error);
     res.status(500).json({ error: 'Failed to deactivate user' });
+  }
+};
+
+// Activate user (admin)
+export const activateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const result = await query(
+      `UPDATE users SET is_active = TRUE WHERE id = $1 RETURNING id, name, email`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      message: 'User activated',
+      user: result.rows[0],
+    });
+  } catch (error) {
+    console.error('Activate user error:', error);
+    res.status(500).json({ error: 'Failed to activate user' });
+  }
+};
+
+// Get ALL users (admin)
+export const getAllUsers = async (req, res) => {
+  try {
+    const { role, limit = 50, offset = 0 } = req.query;
+
+    let sql = `
+      SELECT id, name, email, phone, role, ward, is_active, is_verified, created_at, avatar_url
+      FROM users
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (role) {
+      sql += ` AND role = $${params.length + 1}`;
+      params.push(role);
+    }
+
+    sql += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limit, offset);
+
+    const result = await query(sql, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get all users error:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+};
+
+// Get ALL providers (admin) — includes verified + unverified
+export const getAllProviders = async (req, res) => {
+  try {
+    const { limit = 50, offset = 0 } = req.query;
+
+    const result = await query(
+      `SELECT u.id, u.name, u.email, u.phone, u.ward, u.avatar_url, u.is_verified, u.is_active, u.created_at,
+              pp.hourly_rate, pp.citizenship_no, pp.rating_avg, pp.total_reviews, sc.name as service_category
+       FROM users u
+       LEFT JOIN provider_profiles pp ON u.id = pp.user_id
+       LEFT JOIN service_categories sc ON pp.category_id = sc.id
+       WHERE u.role = 'provider'
+       ORDER BY u.created_at DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get all providers error:', error);
+    res.status(500).json({ error: 'Failed to fetch providers' });
   }
 };

@@ -1,4 +1,5 @@
 import { query } from '../config/database.js';
+import { sendNotification, notifyAllAdmins } from '../config/socketHelper.js';
 
 // Create review (Customer only)
 export const createReview = async (req, res) => {
@@ -65,11 +66,22 @@ export const createReview = async (req, res) => {
       [ratingData.avg_rating, ratingData.total_reviews, booking.provider_id]
     );
 
-    // Notify provider
-    await query(
-      `INSERT INTO notifications (user_id, booking_id, message, type)
-       VALUES ($1, $2, $3, $4)`,
-      [booking.provider_id, booking_id, `You received a ${rating}-star review`, 'review']
+    // Get customer name for notification
+    const customerResult = await query('SELECT name FROM users WHERE id = $1', [booking.customer_id]);
+    const customerName = customerResult.rows[0]?.name || 'A customer';
+
+    // ── Notify Provider ──
+    await sendNotification(
+      booking.provider_id, booking_id,
+      `⭐ ${customerName} gave you a ${rating}-star review!${comment ? ` "${comment.substring(0, 60)}..."` : ''}`,
+      'review'
+    );
+
+    // ── Notify All Admins ──
+    await notifyAllAdmins(
+      booking_id,
+      `⭐ New review: ${customerName} rated booking #${booking_id} ${rating}/5 stars`,
+      'admin_new_review'
     );
 
     res.status(201).json({

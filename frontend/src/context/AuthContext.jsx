@@ -10,19 +10,38 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load user from localStorage on mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      initializeSocket(storedToken);
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await authAPI.getCurrentUser();
+      const freshUser = res.data;
+      setUser(freshUser);
+      localStorage.setItem('user', JSON.stringify(freshUser));
+      return freshUser;
+    } catch (err) {
+      console.warn('Failed to refresh user data', err);
+      return null;
     }
-
-    setLoading(false);
   }, []);
+
+  // Load user from localStorage on mount and verify with backend
+  useEffect(() => {
+    const initAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+
+      if (storedToken && storedUser) {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+        initializeSocket(storedToken);
+
+        // Fetch fresh user data in background to update stale cache (e.g. KYC status)
+        await refreshUser();
+      }
+      setLoading(false);
+    };
+
+    initAuth();
+  }, [refreshUser]);
 
   const register = useCallback(async (formData) => {
     try {
@@ -89,6 +108,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateUser,
+    refreshUser,
     isAuthenticated: !!token,
   };
 

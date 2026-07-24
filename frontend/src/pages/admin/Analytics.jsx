@@ -73,8 +73,8 @@ export default function Analytics() {
     }
   };
 
-  const totalRevenue = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  const totalCommission = Math.round(totalRevenue * 0.10);
+  const totalCommission = stats?.total_revenue ? Number(stats.total_revenue) : 0;
+  const totalRevenue = totalCommission * 10; // since commission is 10% of total payment
 
   // Build chart data from analytics or payments
   const bookingsByCategory = analytics?.bookingsByCategory ||
@@ -122,11 +122,11 @@ export default function Analytics() {
     },
     {
       label: 'Avg Rating',
-      value: stats?.avg_rating ? Number(stats.avg_rating).toFixed(1) : '—',
+      value: stats?.avg_platform_rating ? Number(stats.avg_platform_rating).toFixed(1) : '—',
       icon: Star,
       color: '#f59e0b',
       bg: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
-      sub: `${stats?.total_reviews || 0} reviews`,
+      sub: `Platform-wide`,
     },
     {
       label: 'Completed Jobs',
