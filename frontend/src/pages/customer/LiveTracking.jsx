@@ -403,7 +403,7 @@ export default function LiveTracking() {
               </div>
             )}
 
-            {/* Footer Actions */
+            {/* Footer Actions */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <button
                 onClick={simulateProgress}
