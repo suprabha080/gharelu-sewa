@@ -1,4 +1,5 @@
 import { query } from '../config/database.js';
+import { sendNotification, notifyAllAdmins } from '../config/socketHelper.js';
 import crypto from 'crypto';
 
 const COMMISSION_RATE = 0.10; // 10% platform commission
@@ -124,28 +125,31 @@ export const verifyPayment = async (req, res) => {
       [refId, oid]
     );
 
-    // Notify provider about payout
-    await query(
-      `INSERT INTO notifications (user_id, booking_id, message, type)
-       VALUES ($1, $2, $3, $4)`,
-      [
-        payment.provider_id,
-        payment.booking_id,
-        `Payment received for booking #${payment.booking_id}. Your payout: Rs. ${payment.provider_payout}`,
-        'payment_received'
-      ]
+    // Get names for notification messages
+    const customerResult = await query('SELECT name FROM users WHERE id = $1', [payment.customer_id]);
+    const providerResult = await query('SELECT name FROM users WHERE id = $1', [payment.provider_id]);
+    const customerName = customerResult.rows[0]?.name || 'Customer';
+    const providerName = providerResult.rows[0]?.name || 'Provider';
+
+    // ── Notify Provider about payout ──
+    await sendNotification(
+      payment.provider_id, payment.booking_id,
+      `💰 Payment received for booking #${payment.booking_id}! Your payout: Rs. ${payment.provider_payout}`,
+      'payment_received'
     );
 
-    // Notify customer
-    await query(
-      `INSERT INTO notifications (user_id, booking_id, message, type)
-       VALUES ($1, $2, $3, $4)`,
-      [
-        payment.customer_id,
-        payment.booking_id,
-        `Payment of Rs. ${payment.amount} confirmed via eSewa (Ref: ${refId})`,
-        'payment_confirmed'
-      ]
+    // ── Notify Customer about confirmation ──
+    await sendNotification(
+      payment.customer_id, payment.booking_id,
+      `✅ Payment of Rs. ${payment.amount} confirmed via eSewa (Ref: ${refId})`,
+      'payment_confirmed'
+    );
+
+    // ── Notify All Admins about payment ──
+    await notifyAllAdmins(
+      payment.booking_id,
+      `💰 Payment received: ${customerName} paid Rs. ${payment.amount} for booking #${payment.booking_id}. Commission: Rs. ${payment.commission}. Release Rs. ${payment.provider_payout} to ${providerName}.`,
+      'admin_payment_received'
     );
 
     res.json({

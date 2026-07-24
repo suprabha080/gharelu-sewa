@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import http from 'http';
 import { initializeSocket } from './config/socket.js';
+import { setIO } from './config/socketHelper.js';
 import { initializeDatabase } from './config/initDb.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
@@ -58,6 +59,7 @@ app.use(errorHandler);
 
 // ── Socket.IO Setup ────────────────────────────────────────────────────────
 const io = initializeSocket(server);
+setIO(io);
 
 // ── Start Server ────────────────────────────────────────────────────────────
 const startServer = async () => {
