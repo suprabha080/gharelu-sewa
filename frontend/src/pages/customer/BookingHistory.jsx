@@ -227,12 +227,20 @@ export default function BookingHistory() {
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
                   {booking.status === 'completed' && (
-                    <Link
-                      to={`/customer/invoice/${booking.id}`}
-                      style={{ padding: '0.375rem 0.75rem', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none' }}
-                    >
-                      Pay / Invoice
-                    </Link>
+                    <>
+                      <Link
+                        to={`/customer/invoice/${booking.id}`}
+                        style={{ padding: '0.375rem 0.75rem', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none' }}
+                      >
+                        Pay / Invoice
+                      </Link>
+                      <Link
+                        to={`/customer/bookings/${booking.id}`}
+                        style={{ padding: '0.375rem 0.75rem', background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <Star style={{ width: 14, height: 14 }} /> Rate & Review
+                      </Link>
+                    </>
                   )}
                   <Link
                     to={`/customer/bookings/${booking.id}`}
