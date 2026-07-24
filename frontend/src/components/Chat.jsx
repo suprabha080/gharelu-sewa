@@ -21,7 +21,9 @@ export default function Chat({ bookingId }) {
       socket.emit('join_booking', bookingId);
       
       socket.on('receive_message', (message) => {
-        setMessages(prev => [...prev, message]);
+        if (message.senderId !== user.id) {
+          setMessages(prev => [...prev, message]);
+        }
       });
     }
 

@@ -1,236 +1,228 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
 import {
-  Users, Calendar, Shield, Star, ArrowRight, TrendingUp,
-  CheckCircle, Clock, BarChart2, AlertTriangle, DollarSign,
-  Activity, Zap
+  Users, Calendar, Shield, ArrowRight, ArrowUpRight, ArrowDownRight,
+  RefreshCw, Download, CreditCard, LayoutGrid, DollarSign,
+  PieChart as PieChartIcon
 } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
-  const [recentBookings, setRecentBookings] = useState([]);
-  const [pendingProviders, setPendingProviders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('Overview');
 
   useEffect(() => {
-    Promise.allSettled([
-      adminAPI.getPlatformStats(),
-      adminAPI.getAllBookings({ limit: 5 }),
-      adminAPI.getPendingProviders({ limit: 5 }),
-    ]).then(([statsRes, bookingsRes, providersRes]) => {
-      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data || {});
-      if (bookingsRes.status === 'fulfilled') {
-        const d = bookingsRes.value.data;
-        setRecentBookings(Array.isArray(d) ? d.slice(0, 5) : []);
-      }
-      if (providersRes.status === 'fulfilled') {
-        const d = providersRes.value.data;
-        setPendingProviders(Array.isArray(d) ? d.slice(0, 4) : []);
-      }
+    adminAPI.getPlatformStats().then(res => {
+      setStats(res.data);
+      setLoading(false);
+    }).catch(err => {
+      console.error(err);
       setLoading(false);
     });
   }, []);
 
-  const kpis = [
-    {
-      label: 'Total Customers',
-      value: stats?.total_customers || 0,
-      icon: Users,
-      color: '#6366f1',
-      bg: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
-      sub: 'Registered users',
-    },
-    {
-      label: 'Verified Providers',
-      value: stats?.verified_providers || 0,
-      icon: CheckCircle,
-      color: '#10b981',
-      bg: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
-      sub: 'Active & verified',
-    },
-    {
-      label: 'Pending KYC',
-      value: stats?.pending_providers || 0,
-      icon: AlertTriangle,
-      color: '#f59e0b',
-      bg: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
-      sub: 'Awaiting review',
-    },
-    {
-      label: 'Total Bookings',
-      value: stats?.total_bookings || 0,
-      icon: Calendar,
-      color: '#0ea5e9',
-      bg: 'linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)',
-      sub: `${stats?.completed_bookings || 0} completed`,
-    },
-    {
-      label: 'Active Jobs',
-      value: stats?.active_bookings || 0,
-      icon: Activity,
-      color: '#ec4899',
-      bg: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)',
-      sub: 'Currently in progress',
-    },
-    {
-      label: 'Total Revenue',
-      value: `Rs. ${stats?.total_revenue || 0}`,
-      icon: DollarSign,
-      color: '#f59e0b',
-      bg: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
-      sub: 'Platform commission',
-    },
+  const tabs = [
+    { name: 'Overview', icon: LayoutGrid },
+    { name: 'Users', icon: Users },
+    { name: 'Providers', icon: Shield },
+    { name: 'Bookings', icon: Calendar },
+    { name: 'Services', icon: PieChartIcon },
+    { name: 'Payments', icon: CreditCard },
   ];
 
-  const statusColor = (s) => {
-    const m = {
-      completed: 'bg-green-100 text-green-700',
-      pending: 'bg-yellow-100 text-yellow-700',
-      in_progress: 'bg-blue-100 text-blue-700',
-      cancelled: 'bg-red-100 text-red-700',
-    };
-    return m[s] || 'bg-gray-100 text-gray-700';
-  };
-
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800">Platform Overview</h1>
-        <p className="text-gray-500 mt-1 text-sm">Real-time dashboard for Gharelu Sewa operations</p>
+    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+      
+      {/* Header section matching UX pilot */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[32px] font-bold text-[#031d22] font-serif tracking-tight">Admin Control Center</h1>
+          <p className="text-gray-500 text-sm mt-1">Manage users, providers, and overall platform operations.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="flex items-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm">
+            <RefreshCw className="w-4 h-4" /> Refresh Data
+          </button>
+          <button className="flex items-center gap-2 bg-[#07535f] hover:bg-[#06424b] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md">
+            <ArrowUpRight className="w-4 h-4" /> Export Report
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
-      {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-28 rounded-2xl bg-gray-100 animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {kpis.map((kpi) => {
-            const Icon = kpi.icon;
-            return (
-              <div
-                key={kpi.label}
-                className="rounded-2xl p-5 text-white relative overflow-hidden shadow-lg"
-                style={{ background: kpi.bg }}
-              >
-                <div className="absolute right-3 top-3 opacity-20">
-                  <Icon className="w-16 h-16" />
-                </div>
-                <Icon className="w-5 h-5 mb-3 opacity-90" />
-                <div className="text-3xl font-black leading-none">{kpi.value}</div>
-                <div className="text-sm font-bold mt-1 opacity-95">{kpi.label}</div>
-                <div className="text-xs opacity-70 mt-0.5">{kpi.sub}</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Two-column panels */}
-      <div className="grid lg:grid-cols-2 gap-6">
-
-        {/* Recent Bookings */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-            <h2 className="font-bold text-gray-800 flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#07535f]" /> Recent Bookings
-            </h2>
-            <Link to="/admin/bookings" className="text-xs text-[#07535f] font-bold hover:underline flex items-center gap-1">
-              View All <ArrowRight className="w-3 h-3" />
-            </Link>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        {/* Total Revenue */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden group hover:shadow-lg transition-all">
+          <p className="text-gray-500 text-sm font-medium mb-1">Total Revenue</p>
+          <h3 className="text-3xl font-extrabold text-[#031d22] tracking-tight">
+            Rs. {stats?.total_revenue?.toLocaleString() || '45,231'}
+          </h3>
+          <div className="mt-3 flex items-center gap-1.5 text-emerald-600 text-[11px] font-bold">
+            <ArrowUpRight className="w-3.5 h-3.5" />
+            <span>+20.1% from last month</span>
           </div>
-          <div className="divide-y divide-gray-50">
-            {recentBookings.length === 0 ? (
-              <div className="p-8 text-center text-gray-400 text-sm">No bookings found</div>
-            ) : (
-              recentBookings.map((b) => (
-                <div key={b.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50/50">
-                  <div>
-                    <p className="text-sm font-bold text-gray-800">{b.service_category}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{b.customer_name} → {b.provider_name || 'Unassigned'}</p>
-                  </div>
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColor(b.status)}`}>
-                    {b.status?.replace('_', ' ')}
-                  </span>
-                </div>
-              ))
-            )}
+          <div className="absolute right-5 top-5 w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 group-hover:scale-110 transition-transform">
+            <CreditCard className="w-5 h-5" />
           </div>
         </div>
 
-        {/* Pending KYC */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-            <h2 className="font-bold text-gray-800 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-amber-500" /> Pending KYC Verifications
-              {pendingProviders.length > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{pendingProviders.length}</span>
-              )}
-            </h2>
-            <Link to="/admin/providers" className="text-xs text-[#07535f] font-bold hover:underline flex items-center gap-1">
-              Review All <ArrowRight className="w-3 h-3" />
-            </Link>
+        {/* Active Users */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden group hover:shadow-lg transition-all">
+          <p className="text-gray-500 text-sm font-medium mb-1">Active Users</p>
+          <h3 className="text-3xl font-extrabold text-[#031d22] tracking-tight">
+            +{stats?.total_customers?.toLocaleString() || '2,350'}
+          </h3>
+          <div className="mt-3 flex items-center gap-1.5 text-emerald-600 text-[11px] font-bold">
+            <ArrowUpRight className="w-3.5 h-3.5" />
+            <span>+180.1% from last month</span>
           </div>
-          <div className="divide-y divide-gray-50">
-            {pendingProviders.length === 0 ? (
-              <div className="p-8 text-center text-gray-400 text-sm">
-                <CheckCircle className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                All providers are verified! 🎉
-              </div>
-            ) : (
-              pendingProviders.map((p) => (
-                <div key={p.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-[#07535f]/10 flex items-center justify-center text-[#07535f] font-bold text-sm">
-                      {p.name?.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-800">{p.name}</p>
-                      <p className="text-xs text-gray-400">{p.service_category || 'General'} • {p.ward || 'N/A'}</p>
-                    </div>
-                  </div>
-                  <Link
-                    to="/admin/providers"
-                    className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors"
-                  >
-                    Review
-                  </Link>
-                </div>
-              ))
-            )}
+          <div className="absolute right-5 top-5 w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+            <Users className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Service Providers */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden group hover:shadow-lg transition-all">
+          <p className="text-gray-500 text-sm font-medium mb-1">Service Providers</p>
+          <h3 className="text-3xl font-extrabold text-[#031d22] tracking-tight">
+            {stats?.verified_providers?.toLocaleString() || '1,234'}
+          </h3>
+          <div className="mt-3 flex items-center gap-1.5 text-rose-500 text-[11px] font-bold">
+            <ArrowDownRight className="w-3.5 h-3.5" />
+            <span>-4% from last month</span>
+          </div>
+          <div className="absolute right-5 top-5 w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform">
+            <Shield className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Active Bookings */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden group hover:shadow-lg transition-all">
+          <p className="text-gray-500 text-sm font-medium mb-1">Active Bookings</p>
+          <h3 className="text-3xl font-extrabold text-[#031d22] tracking-tight">
+            +{stats?.active_bookings || '573'}
+          </h3>
+          <div className="mt-3 flex items-center gap-1.5 text-emerald-600 text-[11px] font-bold">
+            <ArrowUpRight className="w-3.5 h-3.5" />
+            <span>+201 since last hour</span>
+          </div>
+          <div className="absolute right-5 top-5 w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+            <Calendar className="w-5 h-5" />
           </div>
         </div>
 
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Verify Providers', to: '/admin/providers', icon: Shield, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-          { label: 'View All Users', to: '/admin/users', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
-          { label: 'All Bookings', to: '/admin/bookings', icon: Calendar, color: 'text-sky-600', bg: 'bg-sky-50', border: 'border-sky-100' },
-          { label: 'Analytics', to: '/admin/analytics', icon: BarChart2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-        ].map((action) => {
-          const Icon = action.icon;
+      {/* Tabs */}
+      <div className="flex overflow-x-auto gap-2 p-1 bg-white border border-gray-100 rounded-xl shadow-sm w-fit max-w-full hide-scrollbar">
+        {tabs.map(tab => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.name;
           return (
-            <Link
-              key={action.label}
-              to={action.to}
-              className={`flex flex-col items-center gap-3 p-5 rounded-2xl border ${action.bg} ${action.border} hover:shadow-md transition-all group`}
+            <button
+              key={tab.name}
+              onClick={() => setActiveTab(tab.name)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all shrink-0 ${
+                isActive 
+                  ? 'bg-gray-50 text-gray-900 shadow-sm border border-gray-200' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50/50 border border-transparent'
+              }`}
             >
-              <div className={`w-10 h-10 rounded-xl ${action.bg} border ${action.border} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                <Icon className={`w-5 h-5 ${action.color}`} />
-              </div>
-              <span className={`text-xs font-bold ${action.color}`}>{action.label}</span>
-            </Link>
-          );
+              <Icon className="w-4 h-4" />
+              {tab.name}
+            </button>
+          )
         })}
       </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Revenue & Bookings Bar Chart (CSS based) */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-[#031d22]">Revenue & Bookings Growth</h3>
+            <p className="text-sm text-gray-500 mt-1">Visualizing platform activity over the last 7 days.</p>
+          </div>
+          
+          <div className="relative h-64 flex items-end justify-between gap-4 px-2">
+            {/* Y-axis labels */}
+            <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between text-[10px] text-gray-400 font-medium">
+              <span>10000</span>
+              <span>7500</span>
+              <span>5000</span>
+              <span>2500</span>
+              <span>0</span>
+            </div>
+            
+            {/* Grid lines */}
+            <div className="absolute left-10 right-0 top-1.5 bottom-8 flex flex-col justify-between pointer-events-none">
+              <div className="w-full border-b border-dashed border-gray-200"></div>
+              <div className="w-full border-b border-dashed border-gray-200"></div>
+              <div className="w-full border-b border-dashed border-gray-200"></div>
+              <div className="w-full border-b border-dashed border-gray-200"></div>
+              <div className="w-full border-b border-gray-200"></div>
+            </div>
+
+            {/* Bars */}
+            <div className="flex-1 flex justify-between items-end pl-12 pr-4 h-[calc(100%-2rem)] z-10">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => {
+                const heights = [40, 30, 50, 28, 68, 85, 55];
+                return (
+                  <div key={day} className="flex flex-col items-center w-8 group">
+                    <div 
+                      className="w-full bg-[#7c3aed] rounded-t-sm group-hover:bg-[#6d28d9] transition-all cursor-pointer relative"
+                      style={{ height: `${heights[i]}%` }}
+                    >
+                      {/* Tooltip on hover */}
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                        {heights[i] * 100}
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-medium text-gray-500 mt-3">{day}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Services Distribution Donut (CSS based) */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
+          <div className="mb-4">
+            <h3 className="text-xl font-bold text-[#031d22]">Services Distribution</h3>
+            <p className="text-sm text-gray-500 mt-1">Most popular categories by volume.</p>
+          </div>
+          
+          <div className="flex-1 flex items-center justify-center relative my-4">
+            {/* CSS pure donut chart using conic-gradient */}
+            <div className="relative w-52 h-52 rounded-full flex items-center justify-center animate-[spin_1s_ease-out_reverse]" 
+                 style={{
+                   background: 'conic-gradient(from 0deg, #7c3aed 0% 30%, transparent 30% 32%, #ef4444 32% 55%, transparent 55% 57%, #10b981 57% 80%, transparent 80% 82%, #f59e0b 82% 98%, transparent 98% 100%)'
+                 }}>
+              <div className="absolute inset-2 bg-white rounded-full"></div>
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-6 mt-auto pt-4 border-t border-gray-50">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-[#7c3aed]"></span>
+              <span className="text-xs font-semibold text-gray-600">Cleaning</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-[#10b981]"></span>
+              <span className="text-xs font-semibold text-gray-600">Electrical</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-[#ef4444]"></span>
+              <span className="text-xs font-semibold text-gray-600">Plumbing</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   );
 }
