@@ -86,7 +86,7 @@ export const login = async (req, res) => {
 
     // Find user
     const result = await query(
-      'SELECT id, name, email, password_hash, role FROM users WHERE email = $1 AND is_active = TRUE',
+     'SELECT id, name, email, password_hash, role FROM users WHERE email = $1',
       [email]
     );
 
@@ -106,7 +106,7 @@ export const login = async (req, res) => {
     const token = generateToken(user.id, user.role);
 
     // Update last login
-    await query('UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+    // await query('UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
 
     res.json({
       message: 'Login successful',
