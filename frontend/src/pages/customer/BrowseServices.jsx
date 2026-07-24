@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { Search, MapPin, Star, Filter, ArrowRight } from 'lucide-react';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 
 export default function BrowseServices() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const initialQuery = queryParams.get('query') || '';
@@ -233,11 +236,19 @@ export default function BrowseServices() {
                     <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block">Starts at</span>
                     <span className="font-bold text-[#07535f]">{provider.price}</span>
                   </div>
-                  <Link to={`/book?category=${encodeURIComponent(provider.category)}`}>
+                  <button
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        navigate(`/login?redirect=${encodeURIComponent(`/book?category=${encodeURIComponent(provider.category)}`)}`);
+                      } else {
+                        navigate(`/book?category=${encodeURIComponent(provider.category)}`);
+                      }
+                    }}
+                  >
                     <Button variant="primary" size="sm" className="flex items-center gap-1">
                       Book <ArrowRight className="w-4 h-4" />
                     </Button>
-                  </Link>
+                  </button>
                 </div>
               </Card>
             ))}

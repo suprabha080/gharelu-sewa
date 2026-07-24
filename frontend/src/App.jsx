@@ -58,6 +58,8 @@ const AppRoutes = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <LoginPage />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <RegisterPage />} />
+      <Route path="/services" element={<BrowseServices />} />
+      <Route path="/browse" element={<BrowseServices />} />
       <Route path="/book" element={<BookingWizard />} />
       <Route path="/track" element={<LiveTracking />} />
       <Route path="/payment/success" element={<PaymentSuccess />} />

@@ -183,34 +183,44 @@ export const Header = () => {
               <>
                 <Link
                   to="/"
-                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
-                    location.pathname === '/' ? 'text-[#07535f] font-semibold' : ''
-                  }`}
+                  className={
+                    location.pathname === '/'
+                      ? "flex items-center gap-1.5 bg-[#07535f] text-white px-4 py-2 rounded-full font-semibold shadow-sm transition-all hover:bg-[#06424b]"
+                      : "flex items-center gap-1.5 text-gray-600 hover:text-[#07535f] hover:bg-gray-100/60 px-3.5 py-2 rounded-full transition-all font-medium"
+                  }
                 >
                   <Home className="w-4 h-4" />
                   <span>Home</span>
                 </Link>
                 <Link
-                  to="/customer/browse"
-                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
-                    location.pathname === '/customer/browse' ? 'text-[#07535f] font-semibold' : ''
-                  }`}
+                  to="/services"
+                  className={
+                    location.pathname.startsWith('/services') || location.pathname.startsWith('/browse') || location.pathname.startsWith('/customer/browse')
+                      ? "flex items-center gap-1.5 bg-[#07535f] text-white px-4 py-2 rounded-full font-semibold shadow-sm transition-all hover:bg-[#06424b]"
+                      : "flex items-center gap-1.5 text-gray-600 hover:text-[#07535f] hover:bg-gray-100/60 px-3.5 py-2 rounded-full transition-all font-medium"
+                  }
                 >
                   <Search className="w-4 h-4" />
                   <span>Services</span>
                 </Link>
                 <Link
                   to="/book"
-                  className="flex items-center gap-1.5 bg-[#07535f] text-white px-4 py-2 rounded-full hover:bg-[#06424b] transition-all font-semibold shadow-sm"
+                  className={
+                    location.pathname.startsWith('/book')
+                      ? "flex items-center gap-1.5 bg-[#07535f] text-white px-4 py-2 rounded-full font-semibold shadow-sm transition-all hover:bg-[#06424b]"
+                      : "flex items-center gap-1.5 text-gray-600 hover:text-[#07535f] hover:bg-gray-100/60 px-3.5 py-2 rounded-full transition-all font-medium"
+                  }
                 >
                   <Calendar className="w-4 h-4" />
                   <span>Book Now</span>
                 </Link>
                 <Link
                   to="/track"
-                  className={`flex items-center gap-1.5 hover:text-[#07535f] transition-colors ${
-                    location.pathname === '/track' ? 'text-[#07535f] font-semibold' : ''
-                  }`}
+                  className={
+                    location.pathname.startsWith('/track')
+                      ? "flex items-center gap-1.5 bg-[#07535f] text-white px-4 py-2 rounded-full font-semibold shadow-sm transition-all hover:bg-[#06424b]"
+                      : "flex items-center gap-1.5 text-gray-600 hover:text-[#07535f] hover:bg-gray-100/60 px-3.5 py-2 rounded-full transition-all font-medium"
+                  }
                 >
                   <User className="w-4 h-4" />
                   <span>Track Job</span>
@@ -382,16 +392,48 @@ export const Header = () => {
                 </>
               ) : (
                 <>
-                  <Link to="/" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                  <Link
+                    to="/"
+                    onClick={() => setShowMenu(false)}
+                    className={
+                      location.pathname === '/'
+                        ? "px-3 py-2 rounded-lg bg-[#07535f] text-white flex items-center gap-2 font-bold"
+                        : "px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                    }
+                  >
                     <Home className="w-4 h-4" /> Home
                   </Link>
-                  <Link to="/customer/browse" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                  <Link
+                    to="/services"
+                    onClick={() => setShowMenu(false)}
+                    className={
+                      location.pathname.startsWith('/services') || location.pathname.startsWith('/browse') || location.pathname.startsWith('/customer/browse')
+                        ? "px-3 py-2 rounded-lg bg-[#07535f] text-white flex items-center gap-2 font-bold"
+                        : "px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                    }
+                  >
                     <Search className="w-4 h-4" /> Services
                   </Link>
-                  <Link to="/book" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg bg-[#07535f] text-white flex items-center gap-2 justify-center font-bold">
+                  <Link
+                    to="/book"
+                    onClick={() => setShowMenu(false)}
+                    className={
+                      location.pathname.startsWith('/book')
+                        ? "px-3 py-2 rounded-lg bg-[#07535f] text-white flex items-center gap-2 font-bold"
+                        : "px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                    }
+                  >
                     <Calendar className="w-4 h-4" /> Book Now
                   </Link>
-                  <Link to="/track" onClick={() => setShowMenu(false)} className="px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                  <Link
+                    to="/track"
+                    onClick={() => setShowMenu(false)}
+                    className={
+                      location.pathname.startsWith('/track')
+                        ? "px-3 py-2 rounded-lg bg-[#07535f] text-white flex items-center gap-2 font-bold"
+                        : "px-3 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                    }
+                  >
                     <User className="w-4 h-4" /> Track Job
                   </Link>
                 </>

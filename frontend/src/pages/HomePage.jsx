@@ -59,7 +59,7 @@ export default function HomePage() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     // Redirect to browse with queries
-    navigate(`/customer/browse?ward=${ward}&query=${searchQuery}`);
+    navigate(`/services?ward=${ward}&query=${searchQuery}`);
   };
 
   return (
@@ -153,7 +153,7 @@ export default function HomePage() {
                 type="button"
                 onClick={() => {
                   setSearchQuery(tag);
-                  navigate(`/customer/browse?query=${tag}`);
+                  navigate(`/services?query=${tag}`);
                 }}
                 className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full text-white transition-colors border border-white/5"
               >
@@ -196,7 +196,7 @@ export default function HomePage() {
             <h2 className="text-2xl font-bold text-gray-800 font-serif">What do you need today?</h2>
             <p className="text-sm text-gray-500 mt-1">Choose from 20+ home service categories</p>
           </div>
-          <Link to="/customer/browse" className="text-xs font-bold text-[#07535f] hover:underline flex items-center gap-0.5">
+          <Link to="/services" className="text-xs font-bold text-[#07535f] hover:underline flex items-center gap-0.5">
             View All <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>

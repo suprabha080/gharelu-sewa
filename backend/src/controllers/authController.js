@@ -84,10 +84,11 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: 'Email and password required' });
     }
 
-    // Find user
+    // Find user (case-insensitive email matching and trimmed input)
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
     const result = await query(
-      'SELECT id, name, email, password_hash, role, is_verified FROM users WHERE email = $1 AND is_active = TRUE',
-      [email]
+      'SELECT id, name, email, password_hash, role, is_verified FROM users WHERE LOWER(email) = LOWER($1) AND is_active = TRUE',
+      [cleanEmail]
     );
 
     if (result.rows.length === 0) {
