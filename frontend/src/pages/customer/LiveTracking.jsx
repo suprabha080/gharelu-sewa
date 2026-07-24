@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, MessageSquare, Check, Compass, Wrench, Navigation, CheckCircle2, AlertCircle, PlayCircle, Clock, MapPin, User, X } from 'lucide-react';
+import { Phone, MessageSquare, Check, Compass, Wrench, Navigation, CheckCircle2, AlertCircle, PlayCircle, Clock, MapPin, User, X, Star, DollarSign } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getSocket } from '../../services/socket';
+import { reviewAPI } from '../../services/api';
 
 // Custom Leaflet icons
 const createCustomIcon = (iconHtml, bgColor) => L.divIcon({
@@ -55,6 +56,34 @@ export default function LiveTracking() {
   const [distance, setDistance] = useState(2.4);
   const [timeRemaining, setTimeRemaining] = useState(12);
   const [showChatModal, setShowChatModal] = useState(false);
+
+  // Review state
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+
+  const submitReview = async (e) => {
+    e.preventDefault();
+    if (reviewRating === 0) { setReviewError('Please select a rating'); return; }
+    setReviewSubmitting(true);
+    setReviewError('');
+    try {
+      await reviewAPI.createReview({
+        booking_id: booking.id,
+        provider_id: booking.provider_id,
+        rating: reviewRating,
+        comment: reviewComment,
+      });
+      setReviewSubmitted(true);
+    } catch (err) {
+      setReviewError(err.response?.data?.error || 'Failed to submit review. Please try again.');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   // Socket: listen for real-time location updates
   useEffect(() => {
@@ -289,7 +318,92 @@ export default function LiveTracking() {
               </div>
             </div>
 
-            {/* Footer Actions */}
+            {/* ── Completion Banner + Review Section ── */}
+            {currentStatus >= 4 && (
+              <div className="space-y-5">
+                {/* Success Banner */}
+                <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
+                  <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-2" />
+                  <h3 className="font-bold text-green-800 text-lg">Work completed successfully!</h3>
+                  <p className="text-sm text-green-600 mt-1">Total: Rs. {booking.total_amount || booking.estimated_cost || 650}</p>
+                </div>
+
+                {/* Rate this service */}
+                <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                  {reviewSubmitted ? (
+                    <div className="text-center py-4">
+                      <div className="flex justify-center gap-1 mb-3">
+                        {[1,2,3,4,5].map(s => (
+                          <Star key={s} className={`w-7 h-7 ${s <= reviewRating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
+                        ))}
+                      </div>
+                      <p className="font-bold text-gray-800">Thank you for your feedback!</p>
+                      {reviewComment && <p className="text-sm text-gray-500 italic mt-2">"{reviewComment}"</p>}
+                      <p className="text-xs text-green-600 font-semibold mt-3 flex items-center justify-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Review submitted successfully
+                      </p>
+                    </div>
+                  ) : (
+                    <form onSubmit={submitReview}>
+                      <h3 className="font-bold text-gray-800 text-base mb-4">Rate this service</h3>
+
+                      {/* Interactive Stars */}
+                      <div className="flex gap-1.5 mb-5">
+                        {[1,2,3,4,5].map(star => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setReviewRating(star)}
+                            onMouseEnter={() => setReviewHover(star)}
+                            onMouseLeave={() => setReviewHover(0)}
+                            className="focus:outline-none transition-transform hover:scale-110"
+                          >
+                            <Star className={`w-9 h-9 transition-colors ${
+                              star <= (reviewHover || reviewRating)
+                                ? 'text-yellow-400 fill-yellow-400'
+                                : 'text-gray-300'
+                            }`} />
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Comment Box */}
+                      <textarea
+                        value={reviewComment}
+                        onChange={e => setReviewComment(e.target.value)}
+                        placeholder="Tell us about your experience"
+                        rows={3}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#07535f]/30 focus:border-[#07535f] resize-none transition-all mb-4"
+                      />
+
+                      {reviewError && (
+                        <p className="text-xs text-red-500 font-semibold bg-red-50 px-3 py-2 rounded-lg mb-3">{reviewError}</p>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={reviewSubmitting || reviewRating === 0}
+                        className="w-full bg-[#07535f] hover:bg-[#06424b] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 text-sm"
+                      >
+                        {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+                {/* Pay Invoice Link */}
+                {booking.id && (
+                  <Link
+                    to={`/customer/invoice/${booking.id}`}
+                    className="w-full flex items-center justify-center gap-2 bg-[#60bb46] hover:bg-[#52a83b] text-white px-6 py-3.5 rounded-full font-bold shadow-sm transition-colors text-sm"
+                  >
+                    <DollarSign className="w-4 h-4" /> Pay Invoice (eSewa)
+                  </Link>
+                )}
+              </div>
+            )}
+
+            {/* Footer Actions */
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <button
                 onClick={simulateProgress}
