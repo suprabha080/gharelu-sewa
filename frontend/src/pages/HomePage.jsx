@@ -6,6 +6,16 @@ import { Search, MapPin, Star, ShieldCheck, Clock, Users, ArrowRight } from 'luc
 export default function HomePage() {
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else if (user.role === 'provider') {
+        navigate('/provider', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
   
   const [ward, setWard] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -261,9 +271,9 @@ export default function HomePage() {
       <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-bold text-gray-800 font-serif text-center mb-12">What Our Customers Say</h2>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="flex overflow-x-auto gap-6 pb-4 snap-x hide-scrollbar scroll-smooth">
           {testimonials.map(t => (
-            <div key={t.id} className="border border-gray-50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow bg-white flex flex-col justify-between">
+            <div key={t.id} className="min-w-[300px] sm:min-w-[350px] snap-center shrink-0 border border-gray-50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow bg-white flex flex-col justify-between">
               <div>
                 <div className="flex gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (
