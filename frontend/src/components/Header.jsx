@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Bell, LogOut, Home, Search, Calendar, User, ChevronDown, Shield, BarChart2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { notificationAPI } from '../services/api';
 import { onNotification } from '../services/socket';
+import { ToastContainer } from './ToastContainer';
 
 export const Header = () => {
   const { user, logout, isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const toastRef = useRef(null);
   const [showMenu, setShowMenu] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -34,6 +36,7 @@ export const Header = () => {
       onNotification((data) => {
         setNotifications(prev => [{ ...data, id: Date.now(), created_at: new Date().toISOString() }, ...prev]);
         setUnreadCount(prev => prev + 1);
+        toastRef.current?.addToast(data.message, data.type, data.bookingId);
       });
     }
   }, [isAuthenticated]);
@@ -86,7 +89,8 @@ export const Header = () => {
 
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+    <>
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
@@ -221,7 +225,6 @@ export const Header = () => {
             {/* Role Badge — only shown when logged in */}
             {isAuthenticated && roleBadge && (
               <span
-                style={{ background: roleBadge.bg, color: roleBadge.color }}
                 className="hidden md:inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border"
                 style={{ background: roleBadge.bg, color: roleBadge.color, border: `1px solid ${roleBadge.color}30` }}
               >
@@ -422,6 +425,8 @@ export const Header = () => {
         )}
       </div>
     </header>
+      <ToastContainer ref={toastRef} />
+    </>
   );
 };
 
