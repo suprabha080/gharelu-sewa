@@ -3,7 +3,7 @@ import { sendNotification, notifyAllAdmins } from '../config/socketHelper.js';
 import crypto from 'crypto';
 
 const COMMISSION_RATE = 0.10; // 10% platform commission
-const ESEWA_MERCHANT_CODE = 'EPAYTEST'; // eSewa sandbox merchant code
+const ESEWA_MERCHANT_CODE = process.env.ESEWA_MERCHANT_CODE || 'EPAYTEST'; // configurable merchant code
 const ESEWA_SUCCESS_URL = process.env.FRONTEND_URL
   ? `${process.env.FRONTEND_URL}/payment/success`
   : 'http://localhost:5173/payment/success';
@@ -95,7 +95,28 @@ export const initiatePayment = async (req, res) => {
 // Verify eSewa payment after redirect back
 export const verifyPayment = async (req, res) => {
   try {
-    const { oid, amt, refId } = req.query;
+    let { oid, amt, refId, data } = req.query;
+
+    if (data) {
+      // Decode eSewa v2 Base64 data response
+      const decodedData = JSON.parse(Buffer.from(data, 'base64').toString('utf-8'));
+      oid = decodedData.transaction_uuid;
+      amt = decodedData.total_amount.toString();
+      refId = decodedData.transaction_code;
+
+      // Verify HMAC-SHA256 signature sent by eSewa
+      const secret = process.env.ESEWA_SECRET || '8gBm/:&EnhH.1/q';
+      const message = `transaction_code=${decodedData.transaction_code},status=${decodedData.status},total_amount=${decodedData.total_amount},transaction_uuid=${decodedData.transaction_uuid},product_code=${decodedData.product_code},signed_field_names=${decodedData.signed_field_names}`;
+      const generatedSignature = crypto.createHmac('sha256', secret).update(message).digest('base64');
+
+      if (generatedSignature !== decodedData.signature) {
+        return res.status(400).json({ error: 'Signature verification failed — payment rejected' });
+      }
+
+      if (decodedData.status !== 'COMPLETE') {
+        return res.status(400).json({ error: `Payment status is ${decodedData.status} (expected COMPLETE)` });
+      }
+    }
 
     if (!oid || !amt || !refId) {
       return res.status(400).json({ error: 'Missing payment verification parameters' });
@@ -221,6 +242,6 @@ export const getAllPayments = async (req, res) => {
 // HMAC-SHA256 signature for eSewa v2 API
 function generateEsewaSignature(amount, transactionUuid) {
   const secret = process.env.ESEWA_SECRET || '8gBm/:&EnhH.1/q'; // eSewa sandbox secret
-  const message = `total_amount=${amount},transaction_uuid=${transactionUuid},product_code=EPAYTEST`;
+  const message = `total_amount=${amount},transaction_uuid=${transactionUuid},product_code=${ESEWA_MERCHANT_CODE}`;
   return crypto.createHmac('sha256', secret).update(message).digest('base64');
 }

@@ -14,6 +14,7 @@ import BrowseServices from './pages/customer/BrowseServices';
 import BookingDetails from './pages/customer/BookingDetails';
 import BookingHistory from './pages/customer/BookingHistory';
 import BookingWizard from './pages/customer/BookingWizard';
+import EmergencyBooking from './pages/customer/EmergencyBooking';
 import LiveTracking from './pages/customer/LiveTracking';
 import InvoicePage from './pages/customer/InvoicePage';
 import PaymentSuccess from './pages/customer/PaymentSuccess';
@@ -24,6 +25,7 @@ import ProviderProfile from './pages/provider/Profile';
 import MyBookings from './pages/provider/MyBookings';
 import MyEarnings from './pages/provider/Earnings';
 import FindJobs from './pages/provider/FindJobs';
+import ProviderSchedule from './pages/provider/Schedule';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -31,6 +33,7 @@ import ManageProviders from './pages/admin/ManageProviders';
 import Analytics from './pages/admin/Analytics';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageBookings from './pages/admin/ManageBookings';
+import ManagePayments from './pages/admin/ManagePayments';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -58,7 +61,10 @@ const AppRoutes = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <LoginPage />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <RegisterPage />} />
+      <Route path="/services" element={<BrowseServices />} />
+      <Route path="/browse" element={<BrowseServices />} />
       <Route path="/book" element={<BookingWizard />} />
+      <Route path="/emergency" element={<EmergencyBooking />} />
       <Route path="/track" element={<LiveTracking />} />
       <Route path="/payment/success" element={<PaymentSuccess />} />
       <Route path="/payment/failed" element={<PaymentSuccess />} />
@@ -74,6 +80,8 @@ const AppRoutes = () => {
               <Route path="/bookings/:bookingId" element={<BookingDetails />} />
               <Route path="/invoice/:bookingId" element={<InvoicePage />} />
               <Route path="/history" element={<BookingHistory />} />
+              <Route path="/track" element={<LiveTracking />} />
+              <Route path="/track/:bookingId" element={<LiveTracking />} />
             </Routes>
           </ProtectedRoute>
         }
@@ -89,6 +97,7 @@ const AppRoutes = () => {
               <Route path="/profile" element={<ProviderProfile />} />
               <Route path="/bookings" element={<MyBookings />} />
               <Route path="/bookings/:bookingId" element={<BookingDetails />} />
+              <Route path="/schedule" element={<ProviderSchedule />} />
               <Route path="/earnings" element={<MyEarnings />} />
               <Route path="/find-jobs" element={<FindJobs />} />
             </Routes>
@@ -105,9 +114,10 @@ const AppRoutes = () => {
               <Routes>
                 <Route path="/" element={<AdminDashboard />} />
                 <Route path="/providers" element={<ManageProviders />} />
+                <Route path="/bookings" element={<ManageBookings />} />
+                <Route path="/payments" element={<ManagePayments />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/users" element={<ManageUsers />} />
-                <Route path="/bookings" element={<ManageBookings />} />
               </Routes>
             </AdminLayout>
           </ProtectedRoute>

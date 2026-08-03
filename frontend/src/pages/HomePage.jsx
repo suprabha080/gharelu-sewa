@@ -6,16 +6,6 @@ import { Search, MapPin, Star, ShieldCheck, Clock, Users, ArrowRight } from 'luc
 export default function HomePage() {
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
-
-  React.useEffect(() => {
-    if (isAuthenticated && user) {
-      if (user.role === 'admin') {
-        navigate('/admin', { replace: true });
-      } else if (user.role === 'provider') {
-        navigate('/provider', { replace: true });
-      }
-    }
-  }, [isAuthenticated, user, navigate]);
   
   const [ward, setWard] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -216,6 +206,92 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Features / Why Choose Us Section */}
+      <section className="bg-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-800 font-serif mb-3">Why Choose Gharelu Sewa?</h2>
+            <p className="text-sm text-gray-500 max-w-2xl mx-auto">Built for reliability, speed, and trust in every neighborhood.</p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Feature 1 — Emergency Booking */}
+            <Link
+              to="/emergency"
+              className="bg-red-50 border-2 border-red-100 p-6 rounded-2xl hover:shadow-lg hover:border-red-300 transition-all group cursor-pointer block"
+            >
+              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Clock className="w-6 h-6" />
+              </div>
+              <div className="flex items-center gap-1.5 mb-2">
+                <h3 className="font-bold text-gray-900">Emergency Booking</h3>
+                <ArrowRight className="w-4 h-4 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Urgent household problem? Get a provider dispatched to your ward in minutes.
+              </p>
+              <span className="inline-block mt-3 text-xs font-bold text-red-600 bg-red-100 px-2.5 py-1 rounded-full">
+                🚨 Tap to request now →
+              </span>
+            </Link>
+            
+            {/* Feature 2 — Offline Mode */}
+            <div className="bg-blue-50 border-2 border-blue-100 p-6 rounded-2xl hover:shadow-lg hover:border-blue-300 transition-all group">
+              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Users className="w-6 h-6" />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-2">Offline/Low-Data Mode</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                App works in weak network areas. Your bookings and provider info are cached for low-data access.
+              </p>
+              <span className="inline-block mt-3 text-xs font-semibold text-blue-600 bg-blue-100 px-2.5 py-1 rounded-full">
+                ✅ Auto-enabled
+              </span>
+            </div>
+
+            {/* Feature 3 — Trust System */}
+            <Link
+              to="/register?role=provider"
+              className="bg-emerald-50 border-2 border-emerald-100 p-6 rounded-2xl hover:shadow-lg hover:border-emerald-300 transition-all group block"
+            >
+              <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div className="flex items-center gap-1.5 mb-2">
+                <h3 className="font-bold text-gray-900">Verified Trust System</h3>
+                <ArrowRight className="w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Every provider passes ID verification, background checks, and gets skill badges reviewed by admins.
+              </p>
+              <span className="inline-block mt-3 text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+                🛡 Provider signup →
+              </span>
+            </Link>
+
+            {/* Feature 4 — Ratings */}
+            <Link
+              to="/services"
+              className="bg-yellow-50 border-2 border-yellow-100 p-6 rounded-2xl hover:shadow-lg hover:border-yellow-300 transition-all group block"
+            >
+              <div className="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Star className="w-6 h-6" />
+              </div>
+              <div className="flex items-center gap-1.5 mb-2">
+                <h3 className="font-bold text-gray-900">Ratings with Real Proof</h3>
+                <ArrowRight className="w-4 h-4 text-yellow-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Reviews include photo evidence, "Completed on time" tags, and repeated-customer badges.
+              </p>
+              <span className="inline-block mt-3 text-xs font-bold text-yellow-700 bg-yellow-100 px-2.5 py-1 rounded-full">
+                ⭐ Browse providers →
+              </span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Roadmap Section */}
       <section className="bg-gray-50/70 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -271,9 +347,9 @@ export default function HomePage() {
       <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-bold text-gray-800 font-serif text-center mb-12">What Our Customers Say</h2>
 
-        <div className="flex overflow-x-auto gap-6 pb-4 snap-x hide-scrollbar scroll-smooth">
+        <div className="flex overflow-x-auto gap-6 pb-6 pt-2 snap-x scroll-smooth custom-scrollbar">
           {testimonials.map(t => (
-            <div key={t.id} className="min-w-[300px] sm:min-w-[350px] snap-center shrink-0 border border-gray-50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow bg-white flex flex-col justify-between">
+            <div key={t.id} className="min-w-[300px] sm:min-w-[350px] snap-center shrink-0 border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow bg-white flex flex-col justify-between">
               <div>
                 <div className="flex gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (

@@ -3,11 +3,20 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Wrench, Calendar, MapPin, CreditCard, ChevronRight, X, Zap, Wind, Sparkles, ArrowLeft } from 'lucide-react';
 import { bookingAPI } from '../../services/api';
 
+import { useAuth } from '../../context/AuthContext';
+
 export default function BookingWizard() {
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const categoryParam = queryParams.get('category');
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate(`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`);
+    }
+  }, [isAuthenticated, navigate, location]);
 
   // Services grouped by category
   const servicesByCategory = {
